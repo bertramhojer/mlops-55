@@ -33,6 +33,9 @@
         "UV_LINK_MODE": "copy",
         "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv"
     },
+    "mounts": [
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"
+    ],
     "postCreateCommand": "uv sync --frozen",
     "postStartCommand": "uv run pre-commit install && uv run pre-commit",
     "remoteUser": "vscode"
