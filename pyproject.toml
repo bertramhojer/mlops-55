@@ -19,7 +19,8 @@ dependencies = [
     "pydantic-settings",
     "torch",
     "transformers",
-    "datasets"
+    "datasets",
+    "typer"
 ]
 
 [project.optional-dependencies]
