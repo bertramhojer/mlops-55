@@ -3,30 +3,144 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "project"
-version = "0.0.1"
-description = "MLOps project: fine-tuning a multimodal model related to electronic health records"
+name = "mlops-multimodal-ehr"
+version = "0.1.0"
+description = "Add your description here"
 authors = [
-  { name = "abr", email = "your@email.com" },
-]
-
-keywords = ["machine learning", "MLOps"]
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Programming Language :: Python :: 3",
+  { name = "Andreas", email = "your@email.com" },
+  { name = "Bertram", email = "your@email.com" },
+  { name = "Rachael", email = "your@email.com" },
 ]
 readme = "README.md"
 requires-python = ">=3.12"
-dynamic = ["dependencies", "optional-dependencies"]
 
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+dependencies = [
+    "pydantic",
+    "pydantic-settings",
+    "torch",
+    "transformers",
+    "datasets"
+]
 
-[tool.setuptools.dynamic.optional-dependencies]
-dev = {file = ['requirements_dev.txt']}
+[project.optional-dependencies]
+gpu = [
+    "bitsandbytes>=0.43.2",
+    "flash-attn<=2.6.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "codespell",
+    "pre-commit",
+    "ipython",
+    "ipykernel",
+    "invoke",
+]
+
+test = [
+    "pytest",
+    "coverage",
+    "python-dotenv",
+    "pipreqs",
+    "mypy",
+]
+
+
+docs = [
+  "mkdocs-material",
+  "mkdocs-glightbox",
+  "mkdocs-material-extensions",
+  "pymdown-extensions",
+  "mkdocs-same-dir",
+  "mkdocs-git-revision-date-localized-plugin",
+  "mkdocs-exclude",
+  "markdown-exec[ansi]"
+]
+
+[tool.uv]
+default-groups = ["dev", "test", "docs"]
+no-build-isolation-package = ["flash-attn"]
 
 [tool.ruff]
 line-length = 120
+target-version = "py312"
 
-[tool.coverage.run]
-omit = ["tests/*"]
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "C90",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "YTT",
+    "ASYNC",
+    "S",
+    "BLE",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "DJ",
+    "EM",
+    "EXE",
+    "FA",
+    "ISC",
+    "ICN",
+    "LOG",
+    "PIE",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SLOT",
+    "SIM",
+    "TID",
+    "TCH",
+    "INT",
+    "ERA",
+    "PGH",
+]
+ignore = [
+    "F821",
+    "F841",
+    "D100",
+    "D107",
+    "D211",
+    "D212",
+    "S301",
+    "S311",
+    "S603",
+    "S605",
+    "S607",
+    "B008",
+    "B028",
+    "B905",
+    "COM812",
+    "ISC001",
+    "TC003",
+]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn",
+    ".tox", ".venv", "__pypackages__", "_build", "buck-out", "build", "dist", "node_modules", "venv",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.codespell]
+skip = "*.pdf,*.ipynb,*.drawio,*.json"
+
+[tool.typos.default.extend-identifiers]
+arange = "arange"
+
+[tool.typos.default.extend-words]
+Ue = "Ue"
+Hashi = "Hashi"
