@@ -37,6 +37,6 @@
         "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"
     ],
     "postCreateCommand": "uv sync --frozen",
-    "postStartCommand": "uv run pre-commit install && uv run pre-commit",
+    "postStartCommand": "uv run pre-commit install",
     "remoteUser": "vscode"
 }
