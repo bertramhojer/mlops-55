@@ -22,6 +22,7 @@ dependencies = [
     "transformers",
     "datasets",
     "typer",
+    "lightning>=2.5.0.post0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +43,7 @@ dev = [
 
 test = [
     "pytest",
+    "pytest-check>=2.4.1",
     "coverage",
     "python-dotenv",
     "pipreqs",
