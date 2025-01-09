@@ -32,9 +32,9 @@ def test_reproducibility():
     seed = 42
 
     # Load dataset twice with same seed
-    dataset1 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, seed=seed)
+    dataset1 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, random_seed=seed)
 
-    dataset2 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, seed=seed)
+    dataset2 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, random_seed=seed)
 
     # Check that both datasets contain the same examples
     assert all(d1 == d2 for d1, d2 in zip(dataset1, dataset2))  # noqa: S101
