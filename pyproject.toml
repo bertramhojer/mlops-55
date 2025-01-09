@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mlops-multimodal-ehr"
+name = "mlops-55"
 version = "0.1.0"
 description = "Add your description here"
 authors = [
@@ -14,13 +14,14 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 
+
 dependencies = [
     "pydantic",
     "pydantic-settings",
     "torch",
     "transformers",
     "datasets",
-    "typer"
+    "typer",
 ]
 
 [project.optional-dependencies]
@@ -145,3 +146,6 @@ arange = "arange"
 [tool.typos.default.extend-words]
 Ue = "Ue"
 Hashi = "Hashi"
+
+[tool.setuptools]
+packages.find = {where = ["src"], include = ["project*"]}
