@@ -25,7 +25,12 @@
                 "tamasfe.even-better-toml",
                 "shardulm94.trailing-spaces",
                 "yzhang.markdown-all-in-one"
-            ]
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
+                "python.analysis.autoSearchPaths": true,
+                "python.analysis.extraPaths": ["/home/vscode/.venv/lib/python3.12/site-packages"]
+            }
         }
     },
     "containerEnv": {
