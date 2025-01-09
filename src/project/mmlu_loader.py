@@ -12,24 +12,46 @@ ERROR_DATASET_LOAD = "Failed to load MMLU dataset: {}"
 ERROR_FETCH_SUBJECTS = "Failed to fetch MMLU subjects: {}"
 
 
-def load_mmlu_dataset(split="test", subset_size=None, random_seed=42):
+def load_mmlu_dataset(subjects=None, split="test", subset_size=None, random_seed=42):
     """
-    Load complete MMLU dataset.
+    Load MMLU dataset for specified subjects.
 
     Args:
-        split: Dataset split to load ("train", "test", or "validation") d
+        subjects: List of subjects to load. If None, loads complete dataset
+        split: Dataset split to load ("train", "test", or "validation")
         subset_size: Optional size to subset the dataset to
         random_seed: Random seed for reproducibility
 
     Returns:
-        Complete MMLU dataset for specified split
+        MMLU dataset for specified subjects and split
+
+    Raises:
+        ValueError: If subjects list is empty or subset_size is invalid
+        RuntimeError: If dataset loading fails
     """
     if subset_size is not None and subset_size <= 0:
         raise ValueError(ERROR_INVALID_SUBSET_SIZE)
 
+    if subjects is not None and not subjects:
+        msg = "Must provide at least one subject"
+        raise ValueError(msg)
+
     try:
-        # Load the complete dataset using the "all" configuration
-        dataset = datasets.load_dataset("cais/mmlu", "all", split=split)
+        # Load either complete dataset or specific subjects
+        if subjects is None:
+            dataset = datasets.load_dataset("cais/mmlu", "all", split=split)
+        else:
+            # Load and concatenate individual subject datasets
+            subject_datasets = []
+            for subject in subjects:
+                try:
+                    subject_dataset = datasets.load_dataset("cais/mmlu", subject, split=split)
+                    subject_datasets.append(subject_dataset)
+                except Exception as e:
+                    msg = f"Failed to load subject '{subject}': {str(e)}"
+                    raise RuntimeError(msg) from e
+            dataset = datasets.concatenate_datasets(subject_datasets)
+
     except Exception as e:
         raise RuntimeError(ERROR_DATASET_LOAD.format(str(e))) from e
 

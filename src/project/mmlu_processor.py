@@ -5,7 +5,7 @@ import torch
 from transformers import BertTokenizer
 
 
-class MMluPreprocessor:  # noqa: D101
+class MMLUPreprocessor:  # noqa: D101
     def __init__(
         self,
         tokenizer_name: str = "bert-base-uncased",
