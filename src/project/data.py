@@ -25,6 +25,10 @@ class MMLUDataset(Dataset):
         """Get dataset length."""
         return len(self.dataset)
 
+    def __getoptions__(self) -> list:
+        """Get unique labels in dataset."""
+        return len(set(self.dataset["labels"]))
+
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         """Get dataset item.
 

@@ -2,11 +2,11 @@ import typing
 
 import lightning as l
 import torch
-from transformers import AutoConfig, AutoModelForMultipleChoice
+from transformers import AutoModelForSequenceClassification
 
 
 class ModernBERTQA(l.LightningModule):
-    """Modern BERT QA model for question answering tasks."""
+    """Modern BERT QA model for sequence classification."""
 
     def __init__(
         self,
@@ -17,8 +17,7 @@ class ModernBERTQA(l.LightningModule):
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.config = AutoConfig.from_pretrained(model_name)  # TODO: maybe not needed
-        self.model = AutoModelForMultipleChoice.from_pretrained(model_name, num_labels=num_choices)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_choices)
         self.optimizer_cls = optimizer_cls
         self.optimizer_params = optimizer_params
         self._validate_optimizer()
@@ -41,9 +40,29 @@ class ModernBERTQA(l.LightningModule):
         output = self.model(
             input_ids=batch["input_ids"],
             attention_mask=batch["attention_mask"],
-            labels=batch["label"],
+            labels=batch["labels"],
         )
         self.log("train_loss", output.loss)
+        return output.loss
+    
+    def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+        """Validation step of the model."""
+        output = self.model(
+            input_ids=batch["input_ids"],
+            attention_mask=batch["attention_mask"],
+            labels=batch["labels"],
+        )
+        self.log("val_loss", output.loss)
+        return output.loss
+    
+    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+        """Test step of the model."""
+        output = self.model(
+            input_ids=batch["input_ids"],
+            attention_mask=batch["attention_mask"],
+            labels=batch["labels"],
+        )
+        self.log("test_loss", output.loss)
         return output.loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
