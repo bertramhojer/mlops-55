@@ -8,15 +8,15 @@ from project.model import ModernBERTQA
 from project.data import get_processed_datasets
 
 # Will enable run on certain servers, do no delete
-import torch._dynamo  #noqa: F401
-torch._dynamo.config.suppress_errors = True  #noqa: F401
+#import torch._dynamo  noqa: F401
+#torch._dynamo.config.suppress_errors = True  noqa: F401
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
 app = typer.Typer()
 
 @app.command()
-def train_model(
+def train_model(#
     model_name: str = typer.Argument("answerdotai/ModernBERT-base", help="Model name to train"),
     subjects: list[str] | None = typer.Option(None, help="Subjects to include in dataset"),
     batch_size: int = typer.Option(16, help="Batch size for training"),
