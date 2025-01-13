@@ -1,0 +1,4 @@
+split: "test"
+mode: "binary"
+train_subset_size: 100
+val_subset_size: 10

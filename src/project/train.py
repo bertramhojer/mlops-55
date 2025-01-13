@@ -4,7 +4,6 @@ import hydra
 import pydantic
 import pydantic_settings
 import torch
-import typer
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from loguru import logger
@@ -16,8 +15,7 @@ from project.model import ModernBERTQA
 from project.tools import hydra_to_pydantic, pprint_config
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
-
-train_app = typer.Typer()
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
@@ -36,7 +34,7 @@ def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
     pprint_config(cfg)
-    train(config)
+    run_train(config)
 
 
 if (
@@ -49,11 +47,8 @@ if (
 
     torch._dynamo.config.suppress_errors = True  # type: ignore[attr-defined]  # noqa: SLF001
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-
-@train_app.command("train")
-def train(config: ExperimentConfig):
+def run_train(config: ExperimentConfig):
     """Train model, saves model to output_dir.
 
     TODO: fix binary classification.

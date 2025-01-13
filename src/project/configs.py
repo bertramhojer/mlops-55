@@ -40,3 +40,9 @@ class TrainConfig(pydantic.BaseModel):
     monitor: str = pydantic.Field(..., description="Metric to monitor for early stopping")
     mode: str = pydantic.Field(..., description="Mode for monitoring")
     patience: int = pydantic.Field(..., description="Patience for early stopping")
+
+    @pydantic.field_validator("output_dir", mode="before")
+    @classmethod
+    def _validate_output_dir(cls, v: str) -> str:
+        home_dir = pathlib.Path.home()
+        return pathlib.Path(home_dir, v).as_posix()

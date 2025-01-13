@@ -1,6 +1,6 @@
 defaults:
-  - datamodule/debug
-  - train/debug
+  - datamodule/default
+  - train/default
   - optimizer/sgd
 
 project_name: "MMLU Classification"

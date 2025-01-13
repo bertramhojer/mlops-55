@@ -28,7 +28,9 @@ dependencies = [
 ]
 
 [project.scripts]
-train = "project.train:train"
+train = "project.train:run"
+cli = "project.cli:cli"
+get-processed-datasets = "project.data:get_processed_datasets"
 
 [project.optional-dependencies]
 gpu = [
@@ -72,6 +74,21 @@ no-build-isolation-package = ["flash-attn"]
 
 [tool.codespell]
 skip = "*.pdf,*.ipynb,*.drawio,*.json"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "/tmp/*",
+    "*/site-packages/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError"
+]
 
 [tool.typos.default.extend-identifiers]
 arange = "arange"
