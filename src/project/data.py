@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 
 import datasets
@@ -7,6 +8,8 @@ from torch.utils.data import Dataset
 
 from project.mmlu_loader import load_mmlu_dataset
 from project.mmlu_processor import MMLUPreprocessor
+
+Mode = typing.Literal["binary", "multiclass"]
 
 
 class MMLUDataset(Dataset):
@@ -28,6 +31,10 @@ class MMLUDataset(Dataset):
         """Get dataset length."""
         return len(self.dataset)
 
+    def __getoptions__(self) -> int:
+        """Get unique labels in dataset."""
+        return len(set(self.dataset["labels"]))
+
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         """Get dataset item.
 
@@ -46,6 +53,7 @@ class MMLUDataset(Dataset):
 
     @classmethod
     def from_file(cls, filepath: str | Path, split: str, mode: str = "binary") -> "MMLUDataset":
+
         """Load dataset from processed file.
 
         Args:

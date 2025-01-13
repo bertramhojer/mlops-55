@@ -86,7 +86,9 @@ class MMLUPreprocessor:  # noqa: D101
                 }
 
             # Process and convert to the right format
-            processed = dataset.map(process_binary, remove_columns=dataset.column_names, batched=False)
+            processed: datasets.Dataset = dataset.map(
+                process_binary, remove_columns=dataset.column_names, batched=False
+            )
 
             # Cleaner approach:
             input_ids = [idx for example in processed for idx in example["input_ids"]]

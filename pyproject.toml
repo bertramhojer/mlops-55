@@ -14,7 +14,6 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 
-
 dependencies = [
     "pydantic",
     "pydantic-settings",
@@ -22,9 +21,15 @@ dependencies = [
     "transformers",
     "datasets",
     "typer",
+    "lightning>=2.5.0.post0",
+    "hydra-core>=1.3.2",
+    "rich>=13.9.4",
+    "loguru>=0.7.3",
 ]
 
 [project.scripts]
+train = "project.train:run"
+cli = "project.cli:cli"
 get-processed-datasets = "project.data:get_processed_datasets"
 
 [project.optional-dependencies]
@@ -45,12 +50,12 @@ dev = [
 
 test = [
     "pytest",
+    "pytest-check>=2.4.1",
     "coverage",
     "python-dotenv",
     "pipreqs",
     "mypy",
 ]
-
 
 docs = [
   "mkdocs-material",
@@ -66,79 +71,6 @@ docs = [
 [tool.uv]
 default-groups = ["dev", "test", "docs"]
 no-build-isolation-package = ["flash-attn"]
-
-[tool.ruff]
-line-length = 120
-target-version = "py312"
-
-[tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "C90",
-    "I",
-    "N",
-    "D",
-    "UP",
-    "YTT",
-    "ASYNC",
-    "S",
-    "BLE",
-    "B",
-    "A",
-    "COM",
-    "C4",
-    "DTZ",
-    "T10",
-    "DJ",
-    "EM",
-    "EXE",
-    "FA",
-    "ISC",
-    "ICN",
-    "LOG",
-    "PIE",
-    "PYI",
-    "PT",
-    "Q",
-    "RSE",
-    "RET",
-    "SLF",
-    "SLOT",
-    "SIM",
-    "TID",
-    "TCH",
-    "INT",
-    "ERA",
-    "PGH",
-]
-ignore = [
-    "F821",
-    "F841",
-    "D100",
-    "D107",
-    "D211",
-    "D212",
-    "S301",
-    "S311",
-    "S603",
-    "S605",
-    "S607",
-    "B008",
-    "B028",
-    "B905",
-    "COM812",
-    "ISC001",
-    "TC003",
-]
-exclude = [
-    ".bzr", ".direnv", ".eggs", ".git", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn",
-    ".tox", ".venv", "__pypackages__", "_build", "buck-out", "build", "dist", "node_modules", "venv",
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
 
 [tool.codespell]
 skip = "*.pdf,*.ipynb,*.drawio,*.json"
