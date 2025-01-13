@@ -5,6 +5,21 @@ import torch
 from project.mmlu_processor import MMLUPreprocessor
 
 
+def test_invalid_mode():
+    """Test that invalid mode raises error."""
+    with pytest.raises(ValueError, match="Mode must be 'binary' or 'multiclass'"):
+        MMLUPreprocessor(mode="invalid_mode")
+
+
+def test_processor_modes():
+    """Test processor initialization with different valid modes."""
+    binary_processor = MMLUPreprocessor(mode="binary")
+    assert binary_processor.mode == "binary"  # noqa: S101
+
+    multiclass_processor = MMLUPreprocessor(mode="multiclass")
+    assert multiclass_processor.mode == "multiclass"  # noqa: S101
+
+
 @pytest.fixture
 def simple_mmlu_dataset():
     """Create a simple MMLU-like dataset for testing."""
