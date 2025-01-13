@@ -2,7 +2,7 @@ import datasets
 import pytest
 import torch
 
-from project.mmlu_processor import MMluPreprocessor
+from project.mmlu_processor import MMLUPreprocessor
 
 
 @pytest.fixture
