@@ -24,7 +24,7 @@ def print_tree(directory: pathlib.Path, prefix: str = ""):
         connector = "└──" if i == len(files) - 1 else "├──"
         typer.echo(f"{prefix}{connector} {path.name}")
 
-    subdirs = [d for d in directory.iterdir() if d.is_dir() and d.name != ["experiments", "outputs"]]
+    subdirs = [d for d in directory.iterdir() if d.is_dir() and d.name not in ["experiments", "outputs"]]
     for i, subdir in enumerate(subdirs):
         connector = "└──" if i == len(subdirs) - 1 else "├──"
         typer.echo(f"{prefix}{connector} {subdir.name}/")
