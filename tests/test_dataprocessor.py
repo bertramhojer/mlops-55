@@ -2,7 +2,22 @@ import datasets
 import pytest
 import torch
 
-from project.mmlu_processor import MMluPreprocessor
+from project.mmlu_processor import MMLUPreprocessor
+
+
+def test_invalid_mode():
+    """Test that invalid mode raises error."""
+    with pytest.raises(ValueError, match="Mode must be 'binary' or 'multiclass'"):
+        MMLUPreprocessor(mode="invalid_mode")
+
+
+def test_processor_modes():
+    """Test processor initialization with different valid modes."""
+    binary_processor = MMLUPreprocessor(mode="binary")
+    assert binary_processor.mode == "binary"  # noqa: S101
+
+    multiclass_processor = MMLUPreprocessor(mode="multiclass")
+    assert multiclass_processor.mode == "multiclass"  # noqa: S101
 
 
 @pytest.fixture
@@ -25,7 +40,7 @@ def test_binary_processing(simple_mmlu_dataset):
     2. Labels are correct (1.0 for correct choice, 0.0 for others).
     3. Output format is correct for BERT training.
     """  # noqa: D205
-    preprocessor = MMluPreprocessor(mode="binary")
+    preprocessor = MMLUPreprocessor(mode="binary")
     processed = preprocessor.preprocess_dataset(simple_mmlu_dataset)
 
     # Should have 4 examples per original question
@@ -50,7 +65,7 @@ def test_multiclass_processing(simple_mmlu_dataset):
     2. Labels are correct integers (0-3).
     3. Output format is correct for BERT training.
     """  # noqa: D205
-    preprocessor = MMluPreprocessor(mode="multiclass")
+    preprocessor = MMLUPreprocessor(mode="multiclass")
     processed = preprocessor.preprocess_dataset(simple_mmlu_dataset)
 
     # Should have same number of examples as original
@@ -71,7 +86,7 @@ def test_batch_creation():
     2. Tensors have correct shapes and types.
     """  # noqa: D205
     # Test binary mode
-    binary_preprocessor = MMluPreprocessor(mode="binary")
+    binary_preprocessor = MMLUPreprocessor(mode="binary")
     binary_examples = [
         {"input_ids": torch.ones(128), "attention_mask": torch.ones(128), "label": 1.0},
         {"input_ids": torch.zeros(128), "attention_mask": torch.zeros(128), "label": 0.0},
@@ -80,7 +95,7 @@ def test_batch_creation():
     assert binary_batch["labels"].dtype == torch.float32  # noqa: S101
 
     # Test multiclass mode
-    multiclass_preprocessor = MMluPreprocessor(mode="multiclass")
+    multiclass_preprocessor = MMLUPreprocessor(mode="multiclass")
     multiclass_examples = [
         {"input_ids": torch.ones(128), "attention_mask": torch.ones(128), "label": 1},
         {"input_ids": torch.zeros(128), "attention_mask": torch.zeros(128), "label": 2},
@@ -103,7 +118,7 @@ def test_mmlu_integration():
     assert len(dataset) == 5  # noqa: S101
 
     # Test binary preprocessing
-    binary_preprocessor = MMluPreprocessor(mode="binary")
+    binary_preprocessor = MMLUPreprocessor(mode="binary")
     binary_processed = binary_preprocessor.preprocess_dataset(dataset)
 
     # Should have 4 examples per question
@@ -112,7 +127,7 @@ def test_mmlu_integration():
     assert "labels" in binary_processed.column_names  # noqa: S101
 
     # Test multiclass preprocessing
-    multiclass_preprocessor = MMluPreprocessor(mode="multiclass")
+    multiclass_preprocessor = MMLUPreprocessor(mode="multiclass")
     multiclass_processed = multiclass_preprocessor.preprocess_dataset(dataset)
 
     # Should have same number of examples as input
