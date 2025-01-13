@@ -3,6 +3,7 @@ from pathlib import Path
 
 import datasets
 import torch
+import typer
 from torch.utils.data import Dataset
 
 from project.mmlu_loader import load_mmlu_dataset
@@ -88,6 +89,12 @@ def get_processed_datasets(
     preprocessor = MMLUPreprocessor(mode=mode)
     processed_dataset = preprocessor.preprocess_dataset(raw_dataset)
 
+    # Add metadata to the dataset info
+    processed_dataset.info.description = f"Processed MMLU dataset ({mode} mode)"
+    # Store metadata in the description field as a string
+    metadata_str = f"subjects: {subjects}, split: {split}, subset_size: {subset_size}, mode: {mode}"
+    processed_dataset.info.description += f"\nMetadata: {metadata_str}"
+
     # Save if path provided
     if save_path is not None:
         save_path = Path(save_path)
@@ -98,9 +105,27 @@ def get_processed_datasets(
     return MMLUDataset(processed_dataset, mode=mode)
 
 
+def main(
+    subjects: list[str] = typer.Option(None, help="List of MMLU subjects to load"),
+    split: str = typer.Option("test", help="Dataset split ('auxiliary_train', 'dev', 'test', or 'validation')"),
+    subset_size: int = typer.Option(100, help="Number of examples to load"),
+    mode: str = typer.Option("binary", help="Format to process data in - either 'binary' or 'multiclass'"),
+    load_path: str = typer.Option(None, help="Optional path to load existing processed dataset from"),
+) -> None:
+    """CLI interface for processing MMLU datasets."""
+    if load_path:
+        dataset = MMLUDataset.from_file(load_path, mode=mode)
+        print(f"Loaded dataset with {len(dataset)} examples from {load_path}")
+    else:
+        dataset = get_processed_datasets(
+            subjects=subjects,
+            split=split,
+            subset_size=subset_size,
+            mode=mode,
+            save_path=f"data/processed/{split}_{mode}_n{subset_size}.dataset",
+        )
+        print(f"Created dataset with {len(dataset)} examples")
+
+
 if __name__ == "__main__":
-    # Example usage
-    dataset = get_processed_datasets(
-        subjects=None, split="test", subset_size=100, mode="binary", save_path="data/processed/test_binary_n100.dataset"
-    )
-    print(f"Created dataset with {len(dataset)} examples")
+    typer.run(main)
