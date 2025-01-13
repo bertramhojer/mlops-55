@@ -1,0 +1,7 @@
+# @package _global_
+defaults:
+  - override /datamodule: full  # override default datamodule/debug
+  - override /optimizer: adam   # override default optimizer/sgd
+  - override /train: full      # override default train/debug
+
+project_name: "MMLU Classification - Experiment 1"
