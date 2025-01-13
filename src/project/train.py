@@ -2,14 +2,14 @@ import torch
 import typer
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
-from model import ModernBERTQA
+from project.model import ModernBERTQA
 
 
 from project.data import get_processed_datasets
 
 # Will enable run on certain servers, do no delete
-# import torch._dynamo  noqa: F401
-# torch._dynamo.config.suppress_errors = True  noqa: F401
+import torch._dynamo  #noqa: F401
+torch._dynamo.config.suppress_errors = True  #noqa: F401
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
@@ -23,7 +23,7 @@ def train_model(
     epochs: int = typer.Option(100, help="Number of epochs to train"),
     learning_rate: float = typer.Option(5e-5, help="Learning rate for training"),
     output_dir: str = typer.Option("models", help="Output directory for saving model"),
-    mode: str = typer.Option("binary", help="Mode for training"),
+    mode: str = typer.Option("multiclass", help="Mode for training"),
     train_subset_size: int | None = typer.Option(None, help="Subset size for training"),
     val_subset_size: int | None = typer.Option(None, help="Subset size for validation"),
 ):
@@ -43,6 +43,8 @@ def train_model(
 
     Returns:
             None
+    
+            TODO: fix binary classification
     """
     # Load processed datasets
     print("Loading datasets...")
