@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 
 import datasets
@@ -7,11 +8,13 @@ from torch.utils.data import Dataset
 from project.mmlu_loader import load_mmlu_dataset
 from project.mmlu_processor import MMLUPreprocessor
 
+Mode = typing.Literal["binary", "multiclass"]
+
 
 class MMLUDataset(Dataset):
     """Custom Dataset class for MMLU data."""
 
-    def __init__(self, dataset: datasets.Dataset, mode: str = "binary"):
+    def __init__(self, dataset: datasets.Dataset, mode: Mode = "binary"):
         """Initialize MMLU Dataset.
 
         Args:
@@ -42,25 +45,24 @@ class MMLUDataset(Dataset):
         }
 
     @classmethod
-    def from_file(cls, filepath: str | Path, mode: str = "binary") -> "MMLUDataset":
+    def from_file(cls, filepath: str) -> "MMLUDataset":
         """Load dataset from processed file.
 
         Args:
             filepath: Path to processed dataset file
-            mode: Either 'binary' or 'multiclass'
 
         Returns:
             MMLUDataset instance
         """
         dataset = datasets.load_from_disk(filepath)
-        return cls(dataset, mode=mode)
+        return cls(dataset)  # type: ignore[arg-type]
 
 
 def get_processed_datasets(
     subjects: list[str] | None = None,
     split: str = "test",
     subset_size: int = 100,
-    mode: str = "binary",
+    mode: Mode = "binary",
     save_path: str | Path | None = None,
 ) -> MMLUDataset:
     """Load and preprocess MMLU dataset in specified format.
