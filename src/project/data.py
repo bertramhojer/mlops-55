@@ -28,6 +28,10 @@ class MMLUDataset(Dataset):
         """Get dataset length."""
         return len(self.dataset)
 
+    def __getoptions__(self) -> int:
+        """Get unique labels in dataset."""
+        return len(set(self.dataset["labels"]))
+
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         """Get dataset item.
 
@@ -62,7 +66,7 @@ def get_processed_datasets(
     subjects: list[str] | None = None,
     split: str = "test",
     subset_size: int = 100,
-    mode: Mode = "binary",
+    mode: typing.Literal["binary", "multiclass"] = "binary",
     save_path: str | Path | None = None,
 ) -> MMLUDataset:
     """Load and preprocess MMLU dataset in specified format.

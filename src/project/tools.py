@@ -2,6 +2,7 @@ import typing
 from copy import copy
 from numbers import Number
 
+import pydantic
 import rich
 import yaml
 from omegaconf import (
@@ -12,6 +13,15 @@ from omegaconf import (
 )
 from rich.syntax import Syntax
 from rich.tree import Tree
+
+M = typing.TypeVar("M", bound=pydantic.BaseModel)
+
+
+def hydra_to_pydantic(config: DictConfig, config_model: type[M]) -> M:
+    """Converts Hydra config to Pydantic config."""
+    # use to_container to resolve
+    config_dict = typing.cast(dict[str, typing.Any], OmegaConf.to_object(config))
+    return config_model(**config_dict)
 
 
 def pprint_config(

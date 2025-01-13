@@ -14,7 +14,6 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 
-
 dependencies = [
     "pydantic",
     "pydantic-settings",
@@ -25,7 +24,11 @@ dependencies = [
     "lightning>=2.5.0.post0",
     "hydra-core>=1.3.2",
     "rich>=13.9.4",
+    "loguru>=0.7.3",
 ]
+
+[project.scripts]
+train = "project.train:train"
 
 [project.optional-dependencies]
 gpu = [
