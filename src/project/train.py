@@ -29,7 +29,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="config")
+@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
@@ -39,8 +39,7 @@ def run(cfg: DictConfig) -> None:
 
 if (
     torch.cuda.is_available()
-    and torch.cuda.get_device_properties(0).major == 11
-    and torch.cuda.get_device_properties(0).minor == 1
+    and torch.version.cuda.split(".")[0] == "11"
 ):
     # Will enable run on certain servers, do no delete
     import torch._dynamo  # noqa: F401
@@ -55,21 +54,18 @@ def run_train(config: ExperimentConfig):
     """
     # Load processed datasets
     logger.info("Loading datasets...")
-    train_dataset = get_processed_datasets(
-        split="auxiliary_train",  # TODO: confirm with Bertram this is right?
+    datasets = get_processed_datasets(
+        source_split="auxiliary_train",  
         subjects=config.datamodule.subjects,
         mode=config.datamodule.mode,
-        subset_size=config.datamodule.train_subset_size,
+        train_size=config.datamodule.train_subset_size,
+        val_size=config.datamodule.val_subset_size,
+        test_size=config.datamodule.test_subset_size,
     )
 
+    train_dataset = datasets["train"]
+    val_dataset = datasets["validation"]
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)
-    val_dataset = get_processed_datasets(
-        split="validation",
-        subjects=config.datamodule.subjects,
-        mode=config.datamodule.mode,
-        subset_size=config.datamodule.val_subset_size,
-    )
-
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config.train.batch_size, shuffle=False)
 
     num_choices = train_dataset.__getoptions__()

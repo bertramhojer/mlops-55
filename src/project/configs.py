@@ -1,5 +1,6 @@
 import pathlib
 import typing
+import typing_extensions
 
 import pydantic
 
@@ -12,6 +13,7 @@ class DatasetConfig(pydantic.BaseModel):
     mode: typing.Literal["binary", "multiclass"] = pydantic.Field(..., description="Mode for dataset")
     train_subset_size: int = pydantic.Field(..., description="Subset size for dataset")
     val_subset_size: int = pydantic.Field(..., description="Subset size for validation dataset")
+    test_subset_size: int = pydantic.Field(..., description="Subset size for test dataset")
 
     @property
     def path_to_data(self) -> str:
@@ -45,4 +47,16 @@ class TrainConfig(pydantic.BaseModel):
     @classmethod
     def _validate_output_dir(cls, v: str) -> str:
         home_dir = pathlib.Path.home()
-        return pathlib.Path(home_dir, v).as_posix()
+        output_path = pathlib.Path(home_dir, v).as_posix()
+        if pathlib.Path(output_path).exists():
+            raise ValueError(f"Output directory already exists: {output_path}")
+        return output_path
+
+class TestConfig(pydantic.BaseModel):
+    """Configuration for testing."""
+
+    checkpoint_path: str = pydantic.Field(..., description="Path to model checkpoint")
+    output_dir: str = pydantic.Field(..., description="Path to save evaluation results")
+    batch_size: int = pydantic.Field(..., description="Batch size for testing")
+    seed: int = pydantic.Field(..., description="Random seed for reproducibility")
+    device: str = pydantic.Field(..., description="Device to use for testing")
