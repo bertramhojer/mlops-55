@@ -17,7 +17,7 @@ def test_get_processed_datasets_with_save():
     assert save_path.exists()  # noqa: S101
 
     # Load the saved dataset and verify
-    loaded_dataset = MMLUDataset.from_file(save_path, mode="binary")
+    loaded_dataset = MMLUDataset.from_file(save_path)
     assert len(loaded_dataset) == len(dataset)  # noqa: S101
 
     # Cleanup

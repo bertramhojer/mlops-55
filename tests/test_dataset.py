@@ -38,7 +38,7 @@ def test_save_and_load(tmp_path):
     original_dataset = get_processed_datasets(subjects=["anatomy"], subset_size=10, mode="binary", save_path=save_path)
 
     # Load saved dataset
-    loaded_dataset = MMLUDataset.from_file(save_path, mode="binary")
+    loaded_dataset = MMLUDataset.from_file(save_path)
 
     # Compare items
     assert len(original_dataset) == len(loaded_dataset)  # noqa: S101
