@@ -1,9 +1,11 @@
+import os
 import typing
 from pathlib import Path
 
 import datasets
 import torch
 import typer
+from dvc.repo import Repo
 from torch.utils.data import Dataset
 
 from project.mmlu_loader import load_mmlu_dataset
@@ -69,6 +71,7 @@ def get_processed_datasets(
     subset_size: int = 100,
     mode: typing.Literal["binary", "multiclass"] = "binary",
     save_path: str | Path | None = None,
+    remote: str = "remote_storage",
 ) -> MMLUDataset:
     """Load and preprocess MMLU dataset in specified format.
 
@@ -78,6 +81,7 @@ def get_processed_datasets(
         subset_size: Number of examples to load
         mode: Format to process data in - either 'binary' or 'multiclass'
         save_path: Optional path to save processed dataset to
+        remote: Name of the DVC remote to use (default: 'remote_storage')
 
     Returns:
         MMLUDataset instance ready for training
@@ -95,12 +99,21 @@ def get_processed_datasets(
     metadata_str = f"subjects: {subjects}, split: {split}, subset_size: {subset_size}, mode: {mode}"
     processed_dataset.info.description += f"\nMetadata: {metadata_str}"
 
-    # Save if path provided
     if save_path is not None:
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
         processed_dataset.save_to_disk(save_path)
-        print(f"Saved processed dataset to {save_path}")
+
+        # init dvc repo
+        repo = Repo(".")
+
+        # add dataset to dvc
+        repo.add(str(save_path))
+
+        # push to remote
+        repo.push(remote=remote)
+
+        print(f"Saved processed dataset to {save_path} and pushed to {remote} remote")
 
     return MMLUDataset(processed_dataset, mode=mode)
 
@@ -111,9 +124,15 @@ def main(
     subset_size: int = typer.Option(100, help="Number of examples to load"),
     mode: str = typer.Option("binary", help="Format to process data in - either 'binary' or 'multiclass'"),
     load_path: str = typer.Option(None, help="Optional path to load existing processed dataset from"),
+    remote: str = typer.Option("remote_storage", help="Name of the DVC remote to use"),
 ) -> None:
     """CLI interface for processing MMLU datasets."""
     if load_path:
+        # Pull form dVc if the file doesn't exist locally
+        if not os.path.exists(load_path):
+            repo = Repo(".")
+            repo.pull(remote=remote, target=[load_path])
+
         dataset = MMLUDataset.from_file(load_path, mode=mode)
         print(f"Loaded dataset with {len(dataset)} examples from {load_path}")
     else:
@@ -123,6 +142,7 @@ def main(
             subset_size=subset_size,
             mode=mode,
             save_path=f"data/processed/{split}_{mode}_n{subset_size}.dataset",
+            remote=remote,
         )
         print(f"Created dataset with {len(dataset)} examples")
 

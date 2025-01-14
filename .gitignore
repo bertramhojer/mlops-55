@@ -2,9 +2,6 @@ docs/site/
 # test cache
 manual_test/
 
-# data
-data
-
 # other local dev info
 .vscode/
 
@@ -21,6 +18,19 @@ data
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Ignore data directories but allow .dvc files
+data/processed/**
+data/raw/**
+data/test/**
+!data/processed/**/*.dvc
+!data/raw/**/*.dvc
+!data/test/**/*.dvc
+
+# Keep the directories themselves
+!data/processed/
+!data/raw/
+!data/test/
 
 # C extensions
 *.so
@@ -180,7 +190,3 @@ cython_debug/
 
 # Hydra outputs
 outputs/
-
-# Processed data
-data/processed/*
-data/raw/*

@@ -1,5 +1,6 @@
 import pytest
 
+from project.data import MMLUDataset, get_processed_datasets
 from project.mmlu_loader import list_available_subjects, load_mmlu_dataset
 
 
@@ -8,7 +9,6 @@ def test_load_single_subject():
     dataset = load_mmlu_dataset(subjects=["anatomy"], split="test")
     assert dataset is not None  # noqa: S101
     assert len(dataset) > 0  # noqa: S101
-    # Check expected columns exist
     assert all(col in dataset.column_names for col in ["question", "choices", "answer"])  # noqa: S101
 
 
@@ -31,12 +31,9 @@ def test_reproducibility():
     subset_size = 5
     seed = 42
 
-    # Load dataset twice with same seed
     dataset1 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, random_seed=seed)
-
     dataset2 = load_mmlu_dataset(subjects=["anatomy"], split="test", subset_size=subset_size, random_seed=seed)
 
-    # Check that both datasets contain the same examples
     assert all(d1 == d2 for d1, d2 in zip(dataset1, dataset2))  # noqa: S101
 
 
@@ -65,3 +62,60 @@ def test_list_subjects():
     assert "anatomy" in subjects  # noqa: S101
     assert "philosophy" in subjects  # noqa: S101
     assert all(isinstance(subject, str) for subject in subjects)  # noqa: S101
+
+
+def test_get_processed_datasets_with_save(tmp_path):
+    """Test dataset processing with save functionality."""
+    from pathlib import Path
+
+    test_dir = Path("data/test")
+    test_dir.mkdir(parents=True, exist_ok=True)
+    save_path = test_dir / "test_dataset"
+    dvc_file = Path(str(save_path) + ".dvc")
+
+    try:
+        dataset = get_processed_datasets(
+            subjects=["philosophy"], split="test", subset_size=5, mode="binary", save_path=save_path
+        )
+
+        assert isinstance(dataset, MMLUDataset)  # noqa: S101
+        assert save_path.exists()  # noqa: S101
+
+        loaded_dataset = MMLUDataset.from_file(save_path)
+        assert len(loaded_dataset) == len(dataset)  # noqa: S101
+    finally:
+        # Clean up
+        import shutil
+
+        if save_path.exists():
+            shutil.rmtree(save_path)
+        if dvc_file.exists():
+            dvc_file.unlink()
+        if test_dir.exists():
+            shutil.rmtree(test_dir)
+
+
+def test_dataset_metadata():
+    """Test that dataset metadata is properly stored."""
+    dataset = get_processed_datasets(subjects=["philosophy"], split="test", subset_size=5, mode="binary")
+
+    assert "Processed MMLU dataset" in dataset.dataset.info.description  # noqa: S101
+    assert "subjects: ['philosophy']" in dataset.dataset.info.description  # noqa: S101
+    assert "split: test" in dataset.dataset.info.description  # noqa: S101
+
+
+def test_load_processed_dataset_from_dvc():
+    """Test loading a processed dataset from dVC storage."""
+    from dvc.repo import Repo
+
+    dataset_path = "data/processed/test_binary_n100.dataset"
+
+    repo = Repo(".")
+    repo.pull(targets=[dataset_path])
+
+    dataset = MMLUDataset.from_file(dataset_path)
+
+    assert dataset is not None  # noqa: S101
+    assert len(dataset) == 100 * 4  # noqa: S101
+    assert hasattr(dataset, "dataset")  # noqa: S101
+    assert "Processed MMLU dataset" in dataset.dataset.info.description  # noqa: S101
