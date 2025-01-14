@@ -1,0 +1,6 @@
+outs:
+- md5: dde09c94eee00dc564bf0bd46dc9caaa.dir
+  size: 264204
+  nfiles: 3
+  hash: md5
+  path: test_binary_n100.dataset
