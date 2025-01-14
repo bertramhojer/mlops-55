@@ -3,17 +3,17 @@ import pathlib
 from collections import Counter
 
 import hydra
+import numpy as np
+import pandas as pd
 import pydantic
 import pydantic_settings
-import numpy as np
 import torch
-import pandas as pd
 from lightning import Trainer
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers import WandbLogger
-from sklearn.metrics import accuracy_score, f1_score
 from loguru import logger
 from omegaconf import DictConfig
+from sklearn.metrics import accuracy_score, f1_score
 
 from project.configs import DatasetConfig, TestConfig
 from project.data import get_processed_datasets
@@ -63,27 +63,25 @@ if (
 
 
 def run_test(config: TestConfig):
-    """
-    Train model, saves model to output_dir.
-    """
+    """Train model, saves model to output_dir."""
     # Load processed datasets
     logger.info("Loading datasets...")
     test_dataset = get_processed_datasets(
-        source_split="auxiliary_train",  
+        source_split="auxiliary_train",
         subjects=config.datamodule.subjects,
         mode=config.datamodule.mode,
         train_size=config.datamodule.train_subset_size,
         val_size=config.datamodule.val_subset_size,
         test_size=config.datamodule.test_subset_size,
     )["test"]
-    
+
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.test.batch_size, shuffle=False)
 
 
     # Load pretrained model from models and evaluate
     checkpoint_file = next(f for f in pathlib.Path(config.test.checkpoint_dir).iterdir() if f.suffix == ".ckpt").name
     model = ModernBERTQA.load_from_checkpoint(pathlib.Path(config.test.checkpoint_dir) / checkpoint_file)
-    with open(f"{config.test.checkpoint_dir}/wandb_id.txt", "r") as f:
+    with open(f"{config.test.checkpoint_dir}/wandb_id.txt") as f:
         wandb_id = f.read()
 
     wandb_logger = WandbLogger(log_model=False, save_dir=config.test.checkpoint_dir, id=wandb_id)

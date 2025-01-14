@@ -1,6 +1,5 @@
 import pathlib
 import typing
-import typing_extensions
 
 import pydantic
 
@@ -47,10 +46,7 @@ class TrainConfig(pydantic.BaseModel):
     @classmethod
     def _validate_output_dir(cls, v: str) -> str:
         root_dir = pathlib.Path(__file__).parent.parent.parent
-        output_path = pathlib.Path(root_dir, v).as_posix()
-        if pathlib.Path(output_path).exists():
-            raise ValueError(f"Output directory already exists: {output_path}")
-        return output_path
+        return pathlib.Path(root_dir, v).as_posix()
 
 class TestConfig(pydantic.BaseModel):
     """Configuration for testing."""

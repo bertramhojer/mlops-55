@@ -53,7 +53,6 @@ class MMLUDataset(Dataset):
 
     @classmethod
     def from_file(cls, filepath: str | Path, split: str, mode: str = "binary") -> "MMLUDataset":
-
         """Load dataset from processed file.
 
         Args:

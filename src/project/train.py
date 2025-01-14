@@ -4,12 +4,12 @@ import hydra
 import pydantic
 import pydantic_settings
 import torch
+from dotenv import load_dotenv
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
-from dotenv import load_dotenv
 
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import get_processed_datasets
@@ -33,7 +33,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="train_config")
+@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs" ), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
@@ -56,7 +56,6 @@ def run_train(config: ExperimentConfig):
 
     TODO: fix binary classification.
     """
-
     train_output_dir = str(PROJECT_ROOT / config.train.output_dir)
 
     wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
@@ -64,7 +63,7 @@ def run_train(config: ExperimentConfig):
     # Load processed datasets
     logger.info("Loading datasets...")
     datasets = get_processed_datasets(
-        source_split="auxiliary_train",  
+        source_split="auxiliary_train",
         subjects=config.datamodule.subjects,
         mode=config.datamodule.mode,
         train_size=config.datamodule.train_subset_size,
