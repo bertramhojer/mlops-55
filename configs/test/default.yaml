@@ -1,5 +1,5 @@
 seed: 42
-checkpoint_path: "models/epoch=2-step=189.ckpt"
-output_dir: "models/"
+checkpoint_dir: "models/exp1/"
+output_dir: "models/exp1/"
 device: "cpu"
 batch_size: 32

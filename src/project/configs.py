@@ -46,8 +46,8 @@ class TrainConfig(pydantic.BaseModel):
     @pydantic.field_validator("output_dir", mode="before")
     @classmethod
     def _validate_output_dir(cls, v: str) -> str:
-        home_dir = pathlib.Path.home()
-        output_path = pathlib.Path(home_dir, v).as_posix()
+        root_dir = pathlib.Path(__file__).parent.parent.parent
+        output_path = pathlib.Path(root_dir, v).as_posix()
         if pathlib.Path(output_path).exists():
             raise ValueError(f"Output directory already exists: {output_path}")
         return output_path
@@ -55,7 +55,7 @@ class TrainConfig(pydantic.BaseModel):
 class TestConfig(pydantic.BaseModel):
     """Configuration for testing."""
 
-    checkpoint_path: str = pydantic.Field(..., description="Path to model checkpoint")
+    checkpoint_dir: str = pydantic.Field(..., description="Path to model checkpoint")
     output_dir: str = pydantic.Field(..., description="Path to save evaluation results")
     batch_size: int = pydantic.Field(..., description="Batch size for testing")
     seed: int = pydantic.Field(..., description="Random seed for reproducibility")

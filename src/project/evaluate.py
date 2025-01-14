@@ -7,8 +7,10 @@ import pydantic
 import pydantic_settings
 import numpy as np
 import torch
+import pandas as pd
 from lightning import Trainer
 from lightning.pytorch.callbacks import Callback
+from lightning.pytorch.loggers import WandbLogger
 from sklearn.metrics import accuracy_score, f1_score
 from loguru import logger
 from omegaconf import DictConfig
@@ -79,7 +81,12 @@ def run_test(config: TestConfig):
 
 
     # Load pretrained model from models and evaluate
-    model = ModernBERTQA.load_from_checkpoint(config.test.checkpoint_path)
+    checkpoint_file = next(f for f in pathlib.Path(config.test.checkpoint_dir).iterdir() if f.suffix == ".ckpt").name
+    model = ModernBERTQA.load_from_checkpoint(pathlib.Path(config.test.checkpoint_dir) / checkpoint_file)
+    with open(f"{config.test.checkpoint_dir}/wandb_id.txt", "r") as f:
+        wandb_id = f.read()
+
+    wandb_logger = WandbLogger(log_model=False, save_dir=config.test.checkpoint_dir, id=wandb_id)
 
     storage_callback = StoreTestPreds()
 
@@ -87,7 +94,8 @@ def run_test(config: TestConfig):
     trainer = Trainer(
         accelerator="gpu" if DEVICE.type == "cuda" else None,
         devices=list(range(torch.cuda.device_count())),
-        callbacks=[storage_callback]
+        callbacks=[storage_callback],
+        logger=wandb_logger,
     )
     results = trainer.test(model, dataloaders=test_loader)
     all_preds, all_labels = storage_callback.test_logits, storage_callback.test_labels
@@ -118,6 +126,15 @@ def run_test(config: TestConfig):
         }
         json.dump(results_dict, f, indent=4)
     logger.info(f"Evaluation results saved to output_path: {output_path}")
+
+    label_biases_table = pd.DataFrame(label_biases.items(), columns=["Label", "Bias"])
+    results_table = pd.DataFrame({
+        "Metric": ["F1", "Accuracy", "Test Loss"],
+        "Value": [f1, accuracy, results[0]["test_loss"]]
+    })
+
+    wandb_logger.log_table("Evaluation Results", dataframe=results_table)
+    wandb_logger.log_table("Label Biases", dataframe=label_biases_table)
 
 
 if __name__ == "__main__":

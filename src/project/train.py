@@ -6,8 +6,10 @@ import pydantic_settings
 import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
+from dotenv import load_dotenv
 
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import get_processed_datasets
@@ -17,6 +19,8 @@ from project.tools import hydra_to_pydantic, pprint_config
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
+# Initialize wandb logger
+load_dotenv()
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
     """Configuration for running experiements."""
@@ -52,6 +56,11 @@ def run_train(config: ExperimentConfig):
 
     TODO: fix binary classification.
     """
+
+    train_output_dir = str(PROJECT_ROOT / config.train.output_dir)
+
+    wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
+
     # Load processed datasets
     logger.info("Loading datasets...")
     datasets = get_processed_datasets(
@@ -78,7 +87,7 @@ def run_train(config: ExperimentConfig):
         optimizer_params=config.optimizer.optimizer_params,
     )
     checkpoint_callback = ModelCheckpoint(
-        dirpath=config.train.output_dir, monitor=config.train.monitor, mode=config.train.mode
+        dirpath=train_output_dir, monitor=config.train.monitor, mode=config.train.mode
     )
     early_stopping_callback = EarlyStopping(
         monitor=config.train.monitor, patience=config.train.patience, verbose=True, mode=config.train.mode
@@ -90,13 +99,20 @@ def run_train(config: ExperimentConfig):
         accelerator="gpu" if DEVICE.type == "cuda" else "cpu",
         max_epochs=config.train.epochs,
         devices=list(range(torch.cuda.device_count())),
-        default_root_dir=config.train.output_dir,
+        default_root_dir=train_output_dir,
+        logger=wandb_logger,
+        log_every_n_steps=5,
     )
     trainer.fit(
         model=model,
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
     )
+
+    run_id = wandb_logger.experiment.id
+    with open(f"{train_output_dir}/wandb_id.txt", "w") as f:
+        f.write(run_id)
+
 
 
 if __name__ == "__main__":
