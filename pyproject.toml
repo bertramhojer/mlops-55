@@ -27,6 +27,7 @@ dependencies = [
     "loguru>=0.7.3",
     "dvc",
     "dvc-gdrive",
+    "dvc-gs",
 ]
 
 [project.scripts]
