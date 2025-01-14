@@ -44,7 +44,7 @@ class ModernBERTQA(l.LightningModule):
         )
         self.log("train_loss", output.loss)
         return output.loss
-    
+
     def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Validation step of the model."""
         output = self.model(
@@ -54,7 +54,7 @@ class ModernBERTQA(l.LightningModule):
         )
         self.log("val_loss", output.loss)
         return output.loss
-    
+
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Test step of the model."""
         output = self.model(
