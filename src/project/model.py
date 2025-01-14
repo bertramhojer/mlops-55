@@ -30,10 +30,10 @@ class ModernBERTQA(l.LightningModule):
             msg = f"Optimizer parameters are not compatible with optimizer class: {e}"
             raise ValueError(msg) from e
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """Forward pass of the model."""
-        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
-        return outputs.logits
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        return outputs
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Training step of the model."""
@@ -63,7 +63,11 @@ class ModernBERTQA(l.LightningModule):
             labels=batch["labels"],
         )
         self.log("test_loss", output.loss)
-        return output.loss
+        return {
+            "logits": output.logits,
+            "labels": batch["labels"],
+            "loss": output.loss,
+        }
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizer for the model."""
