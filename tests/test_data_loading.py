@@ -113,9 +113,9 @@ def test_load_processed_dataset_from_dvc():
     repo = Repo(".")
     repo.pull(targets=[dataset_path])
 
-    dataset = MMLUDataset.from_file(dataset_path)
+    dataset = MMLUDataset.from_file(dataset_path, from_dvc=True)
 
     assert dataset is not None  # noqa: S101
-    assert len(dataset) == 100 * 4  # noqa: S101
+    assert len(dataset) == 100 * 4  # samples in the dataset multiplied by 4 (4 classes)  # noqa: S101
     assert hasattr(dataset, "dataset")  # noqa: S101
     assert "Processed MMLU dataset" in dataset.dataset.info.description  # noqa: S101

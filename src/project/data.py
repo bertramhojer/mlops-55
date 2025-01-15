@@ -52,16 +52,19 @@ class MMLUDataset(Dataset):
         }
 
     @classmethod
-    def from_file(cls, filepath: str) -> "MMLUDataset":
+    def from_file(cls, filepath: str, from_dvc: bool = True) -> "MMLUDataset":
         """Load dataset from processed file.
 
         Args:
-            filepath: Path to processed dataset file
-
+            filepath: Path to processed dataset file (local or remote)
+            from_dvc: Whether the file is stored in a remote DVC storage
         Returns:
             MMLUDataset instance
         """
-        dataset = datasets.load_from_disk(filepath)
+        if from_dvc:
+            dataset = datasets.load_from_disk(filepath, storage_options={"project": "mmlu-bucket"})
+        else:
+            dataset = datasets.load_from_disk(filepath)
         return cls(dataset)  # type: ignore[arg-type]
 
 
