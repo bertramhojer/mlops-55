@@ -90,10 +90,10 @@ class MMLUPreprocessor:  # noqa: D101
                 process_binary, remove_columns=dataset.column_names, batched=False
             )
 
-            # Unflatten the dataset
-            input_ids = torch.cat([torch.tensor(example["input_ids"]) for example in processed]).tolist()
-            attention_mask = torch.cat([torch.tensor(example["attention_mask"]) for example in processed]).tolist()
-            labels = torch.cat([torch.tensor(example["labels"]) for example in processed]).tolist()
+            # Cleaner approach:
+            input_ids = [idx for example in processed for idx in example["input_ids"]]
+            attention_mask = [mask for example in processed for mask in example["attention_mask"]]
+            labels = [label for example in processed for label in example["labels"]]
 
             return datasets.Dataset.from_dict(
                 {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
