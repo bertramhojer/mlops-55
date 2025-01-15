@@ -29,6 +29,7 @@ dependencies = [
     "dvc-gs",
     "fastapi",
     "uvicorn",
+    "httpx",
 ]
 
 [project.scripts]

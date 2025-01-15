@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import fastapi
 import torch
 import uvicorn
+from pydantic import BaseModel
 from transformers import AutoTokenizer, BertForSequenceClassification
 
 
@@ -17,6 +18,14 @@ class Registry:
     def get(self, mode: str) -> BertForSequenceClassification:
         """Get the client."""
         return getattr(self, mode)
+
+
+class PredictionRequest(BaseModel):
+    """Request for prediction."""
+
+    query: str
+    choices: list[str]
+    mode: typing.Literal["binary", "multiclass"] = "multiclass"
 
 
 registry = Registry()
@@ -53,37 +62,30 @@ def health_check():
 
 
 @app.post("/predict")
-def predict(query: str, choices: list[str], mode: typing.Literal["binary", "multiclass"] = "multiclass"):
-    """Predict endpoint.
+def predict(request: PredictionRequest):
+    """Predict endpoint."""
+    model = registry.get(request.mode)
 
-    Args:
-        query: The question or prompt
-        choices: List of possible answers
-        mode: Mode to use from registry
-
-    Returns:
-        Dictionary containing probabilities for each choice
-    """
     # Combine query with each choice
-    model = registry.get(mode)
-
-    if mode == "binary":
-        inputs = [f"{query} [SEP] {choice}" for choice in choices]
+    if request.mode == "binary":
+        inputs = [f"{request.query} [SEP] {choice}" for choice in request.choices]
     else:
-        inputs = [f"{query} [SEP] {choice}" for choice in choices]
+        inputs = [f"{request.query} [SEP] {choice}" for choice in request.choices]
 
-    # TODO: Try to fix type hint warning posed by Pyright
-    encoded_inputs = registry.tokenizer(inputs, padding=True, truncation=True, return_tensors="pt")  # type: ignore  # noqa: PGH003
+    # Tokenize all inputs together
+    encoded_inputs = registry.tokenizer(inputs, padding=True, truncation=True, return_tensors="pt")
 
     # Run inference
     with torch.inference_mode():
         outputs = model(**encoded_inputs)
-        probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
+        # Take the diagonal of the output matrix to get one probability per choice
+        logits = outputs.logits.diagonal()  # This gives us one logit per choice
+        probabilities = torch.nn.functional.softmax(logits, dim=0)
 
     # Convert to list and return predictions
-    predictions = probabilities.flatten().tolist()
+    predictions = probabilities.tolist()
 
-    return {"probabilities": predictions, "choices": choices}
+    return {"probabilities": predictions, "choices": request.choices}
 
 
 if __name__ == "__main__":
