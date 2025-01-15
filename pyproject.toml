@@ -27,6 +27,8 @@ dependencies = [
     "loguru>=0.7.3",
     "dvc",
     "dvc-gs",
+    "fastapi",
+    "uvicorn",
 ]
 
 [project.scripts]
