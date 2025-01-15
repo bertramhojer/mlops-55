@@ -1,0 +1,6 @@
+[core]
+    remote = remote_storage
+    autostage = true
+['remote "remote_storage"']
+    url = gs://mmlu-bucket/
+    version_aware = true

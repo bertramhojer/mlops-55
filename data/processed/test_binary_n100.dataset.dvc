@@ -1,0 +1,25 @@
+outs:
+- hash: md5
+  path: test_binary_n100.dataset
+  files:
+  - relpath: data-00000-of-00001.arrow
+    md5: 6ad54482562f9ba89e90c4396cc385b0
+    size: 263416
+    cloud:
+      remote_storage:
+        etag: 08dbe7a4daa4f78a031001
+        version_id: '1736928987263963'
+  - relpath: dataset_info.json
+    md5: 1ee95e01b10c2afce3c42bf6b5f08c33
+    size: 541
+    cloud:
+      remote_storage:
+        etag: 08a990addaa4f78a031001
+        version_id: '1736928987400233'
+  - relpath: state.json
+    md5: 998b9cd099f9c6098bb4447139f33ee5
+    size: 247
+    cloud:
+      remote_storage:
+        etag: 08a589b3daa4f78a031001
+        version_id: '1736928987497637'
