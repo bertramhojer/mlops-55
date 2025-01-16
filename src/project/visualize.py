@@ -10,13 +10,24 @@ train_dataset = get_processed_datasets(
         mode="multiclass",
         subset_size=1000,
         )
-
+git
 # look at data label distribution
 labels = [item["labels"] for item in train_dataset]
 label_counts = np.unique(labels, return_counts=True)
-print(label_counts)
 plt.bar(label_counts[0], label_counts[1])
-plt.savefig("label_distribution.png")
+plt.savefig("train_label_distribution.png")
+
+test_dataset = get_processed_datasets(
+        split="test",
+        mode="multiclass",
+        subset_size=1000,
+        )
+
+# look at data label distribution
+labels = [item["labels"] for item in test_dataset]
+label_counts = np.unique(labels, return_counts=True)
+plt.bar(label_counts[0], label_counts[1])
+plt.savefig("test_label_distribution.png")
 
 # print an example Q&A
 tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
