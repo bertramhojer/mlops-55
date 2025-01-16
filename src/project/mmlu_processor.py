@@ -2,14 +2,14 @@ from typing import Any, Literal
 
 import datasets
 import torch
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 
 
 class MMLUPreprocessor:  # noqa: D101
     def __init__(
         self,
-        tokenizer_name: str = "bert-base-uncased",
-        max_length: int = 128,
+        tokenizer_name: str = "answerdotai/ModernBERT-base",
+        max_length: int = 8192,
         mode: Literal["binary", "multiclass"] = "binary",
     ):
         """
@@ -24,7 +24,7 @@ class MMLUPreprocessor:  # noqa: D101
             msg = f"Mode must be 'binary' or 'multiclass', got {mode}"
             raise ValueError(msg)
         self.mode = mode
-        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         self.max_length = max_length
 
     def preprocess_binary(self, example: dict[str, Any]) -> list[dict[str, Any]]:

@@ -30,6 +30,7 @@ dependencies = [
     "wandb>=0.19.3",
     "dvc",
     "dvc-gs",
+    "matplotlib>=3.10.0",
 ]
 
 [project.optional-dependencies]
