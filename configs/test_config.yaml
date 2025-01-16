@@ -1,0 +1,5 @@
+defaults:
+  - datamodule/default
+  - test/default
+
+project_name: "MMLU Classification"

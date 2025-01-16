@@ -12,6 +12,7 @@ class DatasetConfig(pydantic.BaseModel):
     mode: typing.Literal["binary", "multiclass"] = pydantic.Field(..., description="Mode for dataset")
     train_subset_size: int = pydantic.Field(..., description="Subset size for dataset")
     val_subset_size: int = pydantic.Field(..., description="Subset size for validation dataset")
+    test_subset_size: int = pydantic.Field(..., description="Subset size for test dataset")
 
     @property
     def path_to_data(self) -> str:
@@ -44,5 +45,14 @@ class TrainConfig(pydantic.BaseModel):
     @pydantic.field_validator("output_dir", mode="before")
     @classmethod
     def _validate_output_dir(cls, v: str) -> str:
-        home_dir = pathlib.Path.home()
-        return pathlib.Path(home_dir, v).as_posix()
+        root_dir = pathlib.Path(__file__).parent.parent.parent
+        return pathlib.Path(root_dir, v).as_posix()
+
+class TestConfig(pydantic.BaseModel):
+    """Configuration for testing."""
+
+    checkpoint_dir: str = pydantic.Field(..., description="Path to model checkpoint")
+    output_dir: str = pydantic.Field(..., description="Path to save evaluation results")
+    batch_size: int = pydantic.Field(..., description="Batch size for testing")
+    seed: int = pydantic.Field(..., description="Random seed for reproducibility")
+    device: str = pydantic.Field(..., description="Device to use for testing")

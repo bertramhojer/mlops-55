@@ -1,4 +1,5 @@
 split: "test"
-mode: "binary"
+mode: "multiclass"
 train_subset_size: 100
 val_subset_size: 10
+test_subset_size: 10

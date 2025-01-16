@@ -1,4 +1,4 @@
-optimizer_name: "torch.optim.SGD"
+optimizer_name: "SGD"
 optimizer_params:
   lr: 0.01
   momentum: 0.9
