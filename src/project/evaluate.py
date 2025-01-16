@@ -18,10 +18,12 @@ from sklearn.metrics import accuracy_score, f1_score
 from project.configs import DatasetConfig, TestConfig
 from project.data import get_processed_datasets
 from project.model import ModernBERTQA
-from project.tools import hydra_to_pydantic, pprint_config
+from project.tools import hydra_to_pydantic, pprint_config, validate_env_variables
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+
+validate_env_variables()
 
 class TestConfig(pydantic_settings.BaseSettings):
     """Configuration for running experiements."""

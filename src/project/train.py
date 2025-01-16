@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import hydra
@@ -14,13 +15,12 @@ from omegaconf import DictConfig
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import get_processed_datasets
 from project.model import ModernBERTQA
-from project.tools import hydra_to_pydantic, pprint_config
+from project.tools import hydra_to_pydantic, pprint_config, validate_env_variables
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-# Initialize wandb logger
-load_dotenv()
+validate_env_variables()
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
     """Configuration for running experiements."""
