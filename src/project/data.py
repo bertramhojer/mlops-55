@@ -1,9 +1,11 @@
+import os
 import typing
 from pathlib import Path
 
 import datasets
 import torch
 import typer
+from dvc.repo import Repo
 from torch.utils.data import Dataset
 
 from project.mmlu_loader import load_mmlu_dataset
@@ -15,17 +17,15 @@ Mode = typing.Literal["binary", "multiclass"]
 class MMLUDataset(Dataset):
     """Custom Dataset class for MMLU data."""
 
-    def __init__(self, dataset: datasets.Dataset, split: str, mode: str = "binary"):
+    def __init__(self, dataset: datasets.Dataset, mode: Mode = "binary"):
         """Initialize MMLU Dataset.
 
         Args:
             dataset: Preprocessed HuggingFace dataset
-            split: Dataset split ('train', 'validation', or 'test')
             mode: Either 'binary' or 'multiclass'
         """
-        self.dataset = dataset[split]  # Access specific split
+        self.dataset = dataset
         self.mode = mode
-        self.split = split
 
     def __len__(self) -> int:
         """Get dataset length."""
@@ -52,119 +52,102 @@ class MMLUDataset(Dataset):
         }
 
     @classmethod
-    def from_file(cls, filepath: str | Path, split: str, mode: str = "binary") -> "MMLUDataset":
+    def from_file(cls, filepath: str, from_dvc: bool = True) -> "MMLUDataset":
         """Load dataset from processed file.
 
         Args:
-            filepath: Path to processed dataset file
-            split: Dataset split to load ('train', 'validation', or 'test')
-            mode: Either 'binary' or 'multiclass'
-
+            filepath: Path to processed dataset file (local or remote)
+            from_dvc: Whether the file is stored in a remote DVC storage
         Returns:
             MMLUDataset instance
         """
-        dataset = datasets.load_from_disk(filepath)
-        return cls(dataset, split=split, mode=mode)
+        if from_dvc:
+            dataset = datasets.load_from_disk(filepath, storage_options={"project": "mmlu-bucket"})
+        else:
+            dataset = datasets.load_from_disk(filepath)
+        return cls(dataset)  # type: ignore[arg-type]
 
 
 def get_processed_datasets(
     subjects: list[str] | None = None,
-    source_split: str = "auxiliary_train",
-    train_size: int = 800,
-    val_size: int = 100,
-    test_size: int = 100,
-    mode: str = "binary",
+    split: str = "test",
+    subset_size: int = 100,
+    mode: typing.Literal["binary", "multiclass"] = "binary",
     save_path: str | Path | None = None,
-    random_seed: int = 42,
-) -> dict[str, MMLUDataset]:
-    """Load and preprocess MMLU dataset in specified format with splits."""
-    # Load the raw dataset
-    total_size = train_size + val_size + test_size
-    raw_dataset = load_mmlu_dataset(subjects=subjects, split=source_split, subset_size=total_size)
+    remote: str = "remote_storage",
+) -> MMLUDataset:
+    """Load and preprocess MMLU dataset in specified format.
 
-    # Split the raw dataset BEFORE preprocessing
-    raw_dataset = raw_dataset.shuffle(seed=random_seed)
-    raw_splits = raw_dataset.train_test_split(
-        train_size=train_size,
-        test_size=val_size + test_size,
-        shuffle=False,
-    )
-    raw_test_splits = raw_splits["test"].train_test_split(
-        train_size=val_size,
-        test_size=test_size,
-        shuffle=False,
-    )
+    Args:
+        subjects: List of MMLU subjects to load
+        split: Dataset split ('train', 'test', or 'validation')
+        subset_size: Number of examples to load
+        mode: Format to process data in - either 'binary' or 'multiclass'
+        save_path: Optional path to save processed dataset to
+        remote: Name of the DVC remote to use (default: 'remote_storage')
 
-    # Preprocess each split separately
+    Returns:
+        MMLUDataset instance ready for training
+    """
+    # First load the dataset
+    raw_dataset = load_mmlu_dataset(subjects=subjects, split=split, subset_size=subset_size)
+
+    # Process in specified format
     preprocessor = MMLUPreprocessor(mode=mode)
-    processed_splits = {
-        "train": preprocessor.preprocess_dataset(raw_splits["train"]),
-        "validation": preprocessor.preprocess_dataset(raw_test_splits["train"]),
-        "test": preprocessor.preprocess_dataset(raw_test_splits["test"]),
-    }
-    combined_dataset = datasets.DatasetDict(processed_splits)
+    processed_dataset = preprocessor.preprocess_dataset(raw_dataset)
 
-    # Add metadata as features/columns instead of using info
-    metadata = {
-        "subjects": str(subjects),  # Convert to string for compatibility
-        "source_split": source_split,
-        "train_size": train_size,
-        "val_size": val_size,
-        "test_size": test_size,
-        "mode": mode,
-        "random_seed": random_seed,
-    }
+    # Add metadata to the dataset info
+    processed_dataset.info.description = f"Processed MMLU dataset ({mode} mode)"
+    # Store metadata in the description field as a string
+    metadata_str = f"subjects: {subjects}, split: {split}, subset_size: {subset_size}, mode: {mode}"
+    processed_dataset.info.description += f"\nMetadata: {metadata_str}"
 
-    # Add metadata as a new feature to each split
-    for split_name, split_dataset in combined_dataset.items():
-        combined_dataset[split_name] = split_dataset.add_column("metadata", [metadata] * len(split_dataset))
-
-    # Save if path provided
     if save_path is not None:
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        combined_dataset.save_to_disk(save_path)
-        print(f"Saved processed dataset to {save_path}")
+        processed_dataset.save_to_disk(save_path)
 
-    # Return dictionary of dataset splits
-    return {split: MMLUDataset(combined_dataset, split=split, mode=mode) for split in ["train", "validation", "test"]}
+        # init dvc repo
+        repo = Repo(".")
 
+        # add dataset to dvc
+        repo.add(str(save_path))
 
-def dataset_statistics(dataset: MMLUDataset) -> None:
-    """Print dataset statistics."""
-    print(f"Dataset length: {len(dataset)}")
-    print(f"Dataset labels: {dataset.dataset['labels'].unique()}")
+        # push to remote
+        repo.push(remote=remote)
+
+        print(f"Saved processed dataset to {save_path} and pushed to {remote} remote")
+
+    return MMLUDataset(processed_dataset, mode=mode)
 
 
 def main(
     subjects: list[str] = typer.Option(None, help="List of MMLU subjects to load"),
-    source_split: str = typer.Option(
-        "auxiliary_train", help="Source split to use ('auxiliary_train', 'dev', 'test', or 'validation')"
-    ),
-    train_size: int = typer.Option(800, help="Number of training examples"),
-    val_size: int = typer.Option(100, help="Number of validation examples"),
-    test_size: int = typer.Option(100, help="Number of test examples"),
+    split: str = typer.Option("test", help="Dataset split ('auxiliary_train', 'dev', 'test', or 'validation')"),
+    subset_size: int = typer.Option(100, help="Number of examples to load"),
     mode: str = typer.Option("binary", help="Format to process data in - either 'binary' or 'multiclass'"),
     load_path: str = typer.Option(None, help="Optional path to load existing processed dataset from"),
-    random_seed: int = typer.Option(42, help="Random seed for reproducible splitting"),
+    remote: str = typer.Option("remote_storage", help="Name of the DVC remote to use"),
 ) -> None:
     """CLI interface for processing MMLU datasets."""
     if load_path:
-        dataset = MMLUDataset.from_file(load_path, split="train", mode=mode)  # Default to train split
+        # Pull form dVc if the file doesn't exist locally
+        if not os.path.exists(load_path):
+            repo = Repo(".")
+            repo.pull(remote=remote, target=[load_path])
+
+        dataset = MMLUDataset.from_file(load_path, mode=mode)
         print(f"Loaded dataset with {len(dataset)} examples from {load_path}")
     else:
-        datasets = get_processed_datasets(
+        dataset = get_processed_datasets(
             subjects=subjects,
-            source_split=source_split,
-            train_size=train_size,
-            val_size=val_size,
-            test_size=test_size,
+            split=split,
+            subset_size=subset_size,
             mode=mode,
-            save_path=f"data/processed/{source_split}_{mode}_splits.dataset",
-            random_seed=random_seed,
+            save_path=f"data/processed/{split}_{mode}_n{subset_size}.dataset",
+            remote=remote,
         )
-        for split_name, dataset in datasets.items():
-            print(f"{split_name.capitalize()} split size: {len(dataset)}")
+        print(f"Created dataset with {len(dataset)} examples")
 
 
 if __name__ == "__main__":

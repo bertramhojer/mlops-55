@@ -29,6 +29,8 @@ dependencies = [
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
     "wandb>=0.19.3",
+    "dvc",
+    "dvc-gs",
 ]
 
 [project.optional-dependencies]
