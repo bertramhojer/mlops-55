@@ -1,11 +1,10 @@
-import os
 import pathlib
 
+import datasets
 import hydra
 import pydantic
 import pydantic_settings
 import torch
-from dotenv import load_dotenv
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
@@ -13,14 +12,12 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
-from project.data import get_processed_datasets
 from project.model import ModernBERTQA
-from project.tools import hydra_to_pydantic, pprint_config, validate_env_variables
+from project.tools import hydra_to_pydantic, pprint_config
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-validate_env_variables()
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
     """Configuration for running experiements."""
@@ -33,7 +30,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs" ), config_name="train_config")
+@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
@@ -41,10 +38,7 @@ def run(cfg: DictConfig) -> None:
     run_train(config)
 
 
-if (
-    torch.cuda.is_available()
-    and torch.version.cuda.split(".")[0] == "11"
-):
+if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":
     # Will enable run on certain servers, do no delete
     import torch._dynamo  # noqa: F401
 
@@ -61,16 +55,8 @@ def run_train(config: ExperimentConfig):
     wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
 
     # Load processed datasets
-    logger.info("Loading datasets...")
-    datasets = get_processed_datasets(
-        source_split="auxiliary_train",
-        subjects=config.datamodule.subjects,
-        mode=config.datamodule.mode,
-        train_size=config.datamodule.train_subset_size,
-        val_size=config.datamodule.val_subset_size,
-        test_size=config.datamodule.test_subset_size,
-    )
-
+    logger.info(f"Loading datasets from {config.datamodule.data_path}...")
+    dataset: datasets.DatasetDict = load_from_dvc
     train_dataset = datasets["train"]
     val_dataset = datasets["validation"]
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)
@@ -111,7 +97,6 @@ def run_train(config: ExperimentConfig):
     run_id = wandb_logger.experiment.id
     with open(f"{train_output_dir}/wandb_id.txt", "w") as f:
         f.write(run_id)
-
 
 
 if __name__ == "__main__":

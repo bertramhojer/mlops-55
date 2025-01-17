@@ -11,13 +11,12 @@ class ModernBERTQA(l.LightningModule):
     def __init__(
         self,
         model_name: str,
-        num_choices: int,
         optimizer_cls: type[torch.optim.Optimizer],
         optimizer_params: dict[str, typing.Any],
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_choices)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
         self.optimizer_cls = optimizer_cls
         self.optimizer_params = optimizer_params
         self._validate_optimizer()
@@ -54,7 +53,7 @@ class ModernBERTQA(l.LightningModule):
         self.log("val_loss", output.loss)
         return output.loss
 
-    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> dict[str, torch.Tensor]:
         """Test step of the model."""
         output = self.model(
             input_ids=batch["input_ids"],
