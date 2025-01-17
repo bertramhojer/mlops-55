@@ -1,6 +1,6 @@
 import pathlib
+from typing import TYPE_CHECKING
 
-import datasets
 import hydra
 import pydantic
 import pydantic_settings
@@ -12,8 +12,12 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
+from project.data import load_from_dvc
 from project.model import ModernBERTQA
 from project.tools import hydra_to_pydantic, pprint_config
+
+if TYPE_CHECKING:
+    import datasets
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -38,7 +42,7 @@ def run(cfg: DictConfig) -> None:
     run_train(config)
 
 
-if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":
+if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # type: ignore  # noqa: PGH003
     # Will enable run on certain servers, do no delete
     import torch._dynamo  # noqa: F401
 
@@ -56,18 +60,15 @@ def run_train(config: ExperimentConfig):
 
     # Load processed datasets
     logger.info(f"Loading datasets from {config.datamodule.data_path}...")
-    dataset: datasets.DatasetDict = load_from_dvc
-    train_dataset = datasets["train"]
-    val_dataset = datasets["validation"]
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config.train.batch_size, shuffle=False)
-
-    num_choices = train_dataset.__getoptions__()
+    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    train_dataset: datasets.Dataset = dataset["train"]
+    val_dataset: datasets.Dataset = dataset["validation"]
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)  # type: ignore  # noqa: PGH003
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config.train.batch_size, shuffle=False)  # type: ignore  # noqa: PGH003
 
     # Initialize model
     model = ModernBERTQA(
         config.train.model_name,
-        num_choices=num_choices,
         optimizer_cls=getattr(torch.optim, config.optimizer.optimizer_name),
         optimizer_params=config.optimizer.optimizer_params,
     )
