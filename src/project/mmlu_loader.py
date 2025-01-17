@@ -1,18 +1,15 @@
-"""Module for loading and processing MMLU datasets."""
-
-import os
+"""Module for loading and processing MMLU (Massive Multitask Language Understanding) datasets."""
 
 import datasets
 import numpy as np
 
 # Error message constants
-ERROR_INVALID_SUBSET_SIZE = "subset_size must be positive"
-ERROR_SUBSET_SIZE_TOO_LARGE = "subset_size ({}) is larger than dataset size ({})"
-ERROR_DATASET_LOAD = "Failed to load MMLU dataset: {}"
-ERROR_FETCH_SUBJECTS = "Failed to fetch MMLU subjects: {}"
+ERROR_INVALID_SUBSET_SIZE = "Subset size must be positive"
+ERROR_SUBSET_SIZE_TOO_LARGE = "Requested subset size ({}) is larger than dataset size ({})"
+ERROR_DATASET_LOAD = "Failed to load dataset: {}"
 
 
-def load_mmlu_dataset(subjects=None, split="test", subset_size=None, random_seed=42):
+def load_mmlu_dataset(subjects=None, split="test", subset_size=None, random_seed=42, auxiliary_train=False):
     """
     Load MMLU dataset for specified subjects.
 
@@ -21,13 +18,40 @@ def load_mmlu_dataset(subjects=None, split="test", subset_size=None, random_seed
         split: Dataset split to load ("train", "test", or "validation")
         subset_size: Optional size to subset the dataset to
         random_seed: Random seed for reproducibility
+        auxiliary_train: If True, loads the auxiliary training data instead of the main dataset
 
     Returns:
         MMLU dataset for specified subjects and split
 
     Raises:
-        ValueError: If subjects list is empty or subset_size is invalid
+        ValueError: If subjects list is empty, subset_size is invalid, or invalid combination of parameters
         RuntimeError: If dataset loading fails
+    """
+    validate_inputs(subjects, subset_size, auxiliary_train, split)
+
+    try:
+        dataset = load_dataset(subjects, split, auxiliary_train)
+
+        if subset_size is not None:
+            dataset = subset_dataset(dataset, subset_size, random_seed)
+
+        return dataset
+    except Exception as e:
+        raise RuntimeError(ERROR_DATASET_LOAD.format(str(e))) from e
+
+
+def validate_inputs(subjects, subset_size, auxiliary_train, split):
+    """
+    Validate input parameters for dataset loading.
+
+    Args:
+        subjects: List of subjects to load
+        subset_size: Size to subset the dataset to
+        auxiliary_train: Whether auxiliary training data is requested
+        split: Dataset split to load
+
+    Raises:
+        ValueError: If any input parameters are invalid
     """
     if subset_size is not None and subset_size <= 0:
         raise ValueError(ERROR_INVALID_SUBSET_SIZE)
@@ -36,58 +60,82 @@ def load_mmlu_dataset(subjects=None, split="test", subset_size=None, random_seed
         msg = "Must provide at least one subject"
         raise ValueError(msg)
 
+    if auxiliary_train and split != "train":
+        msg = "Auxiliary training data is only available for the 'train' split"
+        raise ValueError(msg)
+
+    if auxiliary_train and subjects is not None:
+        msg = "Subject selection is not supported for auxiliary training data"
+        raise ValueError(msg)
+
+
+def load_dataset(subjects, split, auxiliary_train):
+    """
+    Load the MMLU dataset based on specified parameters.
+
+    Args:
+        subjects: List of subjects to load
+        split: Dataset split to load
+        auxiliary_train: Whether to load auxiliary training data
+
+    Returns:
+        Loaded dataset
+
+    Raises:
+        RuntimeError: If dataset loading fails
+    """
+    if auxiliary_train:
+        return datasets.load_dataset("cais/mmlu", "auxiliary_train", split="train")
+
+    if subjects is None:
+        return datasets.load_dataset("cais/mmlu", "all", split=split)
+
+    subject_datasets = []
+    for subject in subjects:
+        subject_datasets.append(load_subject_dataset(subject, split))
+
+    return datasets.concatenate_datasets(subject_datasets)
+
+
+def load_subject_dataset(subject, split):
+    """
+    Load dataset for a specific subject.
+
+    Args:
+        subject: Subject to load
+        split: Dataset split to load
+
+    Returns:
+        Dataset for the specified subject
+
+    Raises:
+        RuntimeError: If loading fails for the subject
+    """
     try:
-        # Load either complete dataset or specific subjects
-        if subjects is None:
-            dataset = datasets.load_dataset("cais/mmlu", "all", split=split)
-        else:
-            # Load and concatenate individual subject datasets
-            subject_datasets = []
-            for subject in subjects:
-                try:
-                    subject_dataset = datasets.load_dataset("cais/mmlu", subject, split=split)
-                    subject_datasets.append(subject_dataset)
-                except Exception as e:
-                    msg = f"Failed to load subject '{subject}': {str(e)}"
-                    raise RuntimeError(msg) from e
-            dataset = datasets.concatenate_datasets(subject_datasets)
-
+        return datasets.load_dataset("cais/mmlu", subject, split=split)
     except Exception as e:
-        raise RuntimeError(ERROR_DATASET_LOAD.format(str(e))) from e
-
-    # Handle subsetting if requested
-    if subset_size is not None:
-        if subset_size > len(dataset):
-            raise ValueError(ERROR_SUBSET_SIZE_TOO_LARGE.format(subset_size, len(dataset)))
-
-        # Set random seed for reproducibility
-        np.random.seed(random_seed)
-
-        # Randomly select indices
-        indices = np.random.choice(len(dataset), size=subset_size, replace=False)
-        dataset = dataset.select(indices)
-
-    return dataset
+        msg = f"Failed to load subject '{subject}': {str(e)}"
+        raise RuntimeError(msg) from e
 
 
-def list_available_subjects():
-    """Get list of all available MMLU subjects."""
-    try:
-        info = datasets.get_dataset_config_names("cais/mmlu")
-        return sorted(info)
-    except Exception as e:
-        raise RuntimeError(ERROR_FETCH_SUBJECTS.format(str(e))) from e
+def subset_dataset(dataset, subset_size, random_seed):
+    """
+    Create a random subset of the dataset.
 
+    Args:
+        dataset: Dataset to subset
+        subset_size: Size of the subset to create
+        random_seed: Random seed for reproducibility
 
-if __name__ == "__main__":
-    # Define the output file path
-    output_dir = "data/raw"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "raw_dataset")
+    Returns:
+        Subset of the original dataset
 
-    # Load the complete dataset
-    dataset = load_mmlu_dataset()
+    Raises:
+        ValueError: If subset_size is larger than dataset size
+    """
+    if subset_size > len(dataset):
+        raise ValueError(ERROR_SUBSET_SIZE_TOO_LARGE.format(subset_size, len(dataset)))
 
-    # Save the dataset to the output file
-    dataset.save_to_disk(output_file)
-    print(f"Dataset saved to {output_file}")
+    np.random.seed(random_seed)
+    indices = np.random.choice(len(dataset), size=subset_size, replace=False)
+    return dataset.select(indices)

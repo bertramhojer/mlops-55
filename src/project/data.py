@@ -40,9 +40,9 @@ def preprocess_binary(
 
         processed_examples.append(
             {
-                "input_ids": encoded["input_ids"][0],
-                "attention_mask": encoded["attention_mask"][0],
-                "label": float(idx == correct_answer),
+                "input_ids": torch.Tensor(encoded["input_ids"][0]),
+                "attention_mask": torch.Tensor(encoded["attention_mask"][0]),
+                "label": torch.Tensor([float(idx == correct_answer)]),
             }
         )
 
