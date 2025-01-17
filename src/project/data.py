@@ -69,9 +69,9 @@ def preprocess_dataset(
 
     # Flatten the dataset
     flattened = {
-        "input_ids": [tensor for example in processed["input_ids"] for tensor in example],
-        "attention_mask": [tensor for example in processed["attention_mask"] for tensor in example],
-        "labels": [label for example in processed["labels"] for label in example],
+        "input_ids": torch.Tensor([tensor for example in processed["input_ids"] for tensor in example]),
+        "attention_mask": torch.Tensor([tensor for example in processed["attention_mask"] for tensor in example]),
+        "labels": torch.Tensor([label for example in processed["labels"] for label in example]),
     }
 
     return datasets.Dataset.from_dict(flattened)

@@ -1,4 +1,3 @@
-import pathlib
 from typing import TYPE_CHECKING
 
 import hydra
@@ -14,13 +13,11 @@ from omegaconf import DictConfig
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
+from project.settings import settings
 from project.tools import hydra_to_pydantic, pprint_config
 
 if TYPE_CHECKING:
     import datasets
-
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
@@ -34,7 +31,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="train_config")
+@hydra.main(version_base=None, config_path=str(settings.PROJECT_DIR / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
@@ -54,7 +51,7 @@ def run_train(config: ExperimentConfig):
 
     TODO: fix binary classification.
     """
-    train_output_dir = str(PROJECT_ROOT / config.train.output_dir)
+    train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
 
     wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
 
@@ -82,12 +79,13 @@ def run_train(config: ExperimentConfig):
     # Train and save model
     trainer = Trainer(
         callbacks=[checkpoint_callback, early_stopping_callback],
-        accelerator="gpu" if DEVICE.type == "cuda" else "cpu",
+        accelerator=str(settings.DEVICE),
         max_epochs=config.train.epochs,
-        devices=list(range(torch.cuda.device_count())),
+        devices="auto",
         default_root_dir=train_output_dir,
         logger=wandb_logger,
         log_every_n_steps=5,
+        precision="bf16-true",
     )
     trainer.fit(
         model=model,
