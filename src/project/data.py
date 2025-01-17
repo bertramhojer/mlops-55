@@ -1,154 +1,135 @@
 import os
-import typing
 from pathlib import Path
+from typing import Any
 
 import datasets
+import numpy as np
 import torch
-import typer
 from dvc.repo import Repo
-from torch.utils.data import Dataset
-
-from project.mmlu_loader import load_mmlu_dataset
-from project.mmlu_processor import MMLUPreprocessor
-
-Mode = typing.Literal["binary", "multiclass"]
+from transformers import PreTrainedTokenizer
 
 
-class MMLUDataset(Dataset):
-    """Custom Dataset class for MMLU data."""
+def subset_dataset(dataset: datasets.Dataset, subset_size: int, random_seed: int) -> datasets.Dataset:
+    """Subset the dataset to a random sample of size `subset_size`."""
+    if subset_size > len(dataset):
+        msg = f"Subset size {subset_size} is larger than dataset size {len(dataset)}"
+        raise ValueError(msg)
 
-    def __init__(self, dataset: datasets.Dataset, mode: Mode = "binary"):
-        """Initialize MMLU Dataset.
+    np.random.seed(random_seed)
+    indices = np.random.choice(len(dataset), size=subset_size, replace=False)
+    return dataset.select(indices)
 
-        Args:
-            dataset: Preprocessed HuggingFace dataset
-            mode: Either 'binary' or 'multiclass'
-        """
-        self.dataset = dataset
-        self.mode = mode
 
-    def __len__(self) -> int:
-        """Get dataset length."""
-        return len(self.dataset)
+def preprocess_binary(
+    example: dict[str, Any], tokenizer: PreTrainedTokenizer, max_length: int, is_auxiliary_train: bool = False
+) -> list[dict[str, torch.Tensor]]:
+    """Convert a single MMLU example into multiple binary classification examples."""
+    # Handle nested structure for auxiliary_train
+    if is_auxiliary_train:
+        example = example["train"]
 
-    def __getoptions__(self) -> int:
-        """Get unique labels in dataset."""
-        return len(set(self.dataset["labels"]))
+    question = example["question"]
+    choices = example["choices"]
+    # Handle both string ('A', 'B', etc) and integer (0, 1, etc) answers
+    correct_answer = example["answer"] if isinstance(example["answer"], int) else ord(example["answer"]) - ord("A")
 
-    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        """Get dataset item.
+    processed_examples = []
+    for idx, choice in enumerate(choices):
+        text = f"{question} [SEP] {choice}"
+        encoded = tokenizer(text, max_length=max_length, padding="max_length", truncation=True, return_tensors="pt")
 
-        Args:
-            idx: Index of item to get
+        processed_examples.append(
+            {
+                "input_ids": torch.Tensor(encoded["input_ids"][0]),
+                "attention_mask": torch.Tensor(encoded["attention_mask"][0]),
+                "label": torch.Tensor([float(idx == correct_answer)]),
+            }
+        )
 
-        Returns:
-            Dictionary containing input_ids, attention_mask and labels tensors
-        """
-        item = self.dataset[idx]
+    return processed_examples
+
+
+def preprocess_dataset(
+    dataset: datasets.Dataset, tokenizer: PreTrainedTokenizer, max_length: int, is_auxiliary_train: bool = False
+) -> datasets.Dataset:
+    """Preprocess entire MMLU dataset."""
+
+    def process_binary(example: dict[str, Any]) -> dict[str, torch.Tensor]:
+        processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train)
         return {
-            "input_ids": torch.tensor(item["input_ids"]),
-            "attention_mask": torch.tensor(item["attention_mask"]),
-            "labels": torch.tensor(item["labels"], dtype=torch.float32 if self.mode == "binary" else torch.long),
+            "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
+            "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
+            "labels": torch.tensor([ex["label"] for ex in processed]),
         }
 
-    @classmethod
-    def from_file(cls, filepath: str, from_dvc: bool = True) -> "MMLUDataset":
-        """Load dataset from processed file.
+    # Process dataset
+    processed = dataset.map(
+        process_binary, remove_columns=dataset.column_names, batched=False, desc="Processing examples"
+    )
 
-        Args:
-            filepath: Path to processed dataset file (local or remote)
-            from_dvc: Whether the file is stored in a remote DVC storage
-        Returns:
-            MMLUDataset instance
-        """
-        if from_dvc:
-            dataset = datasets.load_from_disk(filepath, storage_options={"project": "mmlu-bucket"})
-        else:
-            dataset = datasets.load_from_disk(filepath)
-        return cls(dataset)  # type: ignore[arg-type]
+    # Flatten the dataset
+    flattened = {
+        "input_ids": [tensor for example in processed["input_ids"] for tensor in example],
+        "attention_mask": [tensor for example in processed["attention_mask"] for tensor in example],
+        "labels": [label for example in processed["labels"] for label in example],
+    }
+
+    return datasets.Dataset.from_dict(flattened)
 
 
-def get_processed_datasets(
-    subjects: list[str] | None = None,
-    split: str = "test",
-    subset_size: int = 100,
-    mode: typing.Literal["binary", "multiclass"] = "binary",
-    save_path: str | Path | None = None,
-    remote: str = "remote_storage",
-) -> MMLUDataset:
-    """Load and preprocess MMLU dataset in specified format.
+def create_dataset_dict(
+    train: datasets.Dataset,
+    validation: datasets.Dataset,
+    test: datasets.Dataset,
+    tokenizer: PreTrainedTokenizer,
+    max_length: int,
+    subset_size: int | None = None,
+    random_seed: int = 42,
+) -> datasets.DatasetDict:
+    """Create a dictionary of preprocessed datasets."""
+    dataset_train = preprocess_dataset(
+        dataset=train, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=True
+    )
+    dataset_validation = preprocess_dataset(
+        dataset=validation, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
+    )
+    dataset_test = preprocess_dataset(
+        dataset=test, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
+    )
 
-    Args:
-        subjects: List of MMLU subjects to load
-        split: Dataset split ('train', 'test', or 'validation')
-        subset_size: Number of examples to load
-        mode: Format to process data in - either 'binary' or 'multiclass'
-        save_path: Optional path to save processed dataset to
-        remote: Name of the DVC remote to use (default: 'remote_storage')
+    if subset_size is not None:
+        dataset_train = subset_dataset(dataset_train, subset_size=subset_size, random_seed=random_seed)
 
-    Returns:
-        MMLUDataset instance ready for training
-    """
-    # First load the dataset
-    raw_dataset = load_mmlu_dataset(subjects=subjects, split=split, subset_size=subset_size)
+    return datasets.DatasetDict(
+        {
+            "train": dataset_train,
+            "validation": dataset_validation,
+            "test": dataset_test,
+        }
+    )
 
-    # Process in specified format
-    preprocessor = MMLUPreprocessor(mode=mode)
-    processed_dataset = preprocessor.preprocess_dataset(raw_dataset)
 
-    # Add metadata to the dataset info
-    processed_dataset.info.description = f"Processed MMLU dataset ({mode} mode)"
-    # Store metadata in the description field as a string
-    metadata_str = f"subjects: {subjects}, split: {split}, subset_size: {subset_size}, mode: {mode}"
-    processed_dataset.info.description += f"\nMetadata: {metadata_str}"
+def dataset_to_dvc(data: datasets.DatasetDict, save_path: str, remote: str = "remote_storage") -> None:
+    """Save a dataset to a DVC remote."""
+    save_path = Path(save_path)
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    data.save_to_disk(save_path)
 
-    if save_path is not None:
-        save_path = Path(save_path)
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        processed_dataset.save_to_disk(save_path)
+    # init dvc repo
+    repo = Repo(".")
 
-        # init dvc repo
+    # add dataset to dvc
+    repo.add(str(save_path))
+
+    # push to remote
+    repo.push(remote=remote)
+
+    print(f"Saved processed dataset to {save_path} and pushed to {remote} remote")
+
+
+def load_from_dvc(save_path: str, remote: str = "remote_storage") -> datasets.DatasetDict:
+    """Load a dataset from a DVC remote."""
+    if not os.path.exists(save_path):
         repo = Repo(".")
-
-        # add dataset to dvc
-        repo.add(str(save_path))
-
-        # push to remote
-        repo.push(remote=remote)
-
-        print(f"Saved processed dataset to {save_path} and pushed to {remote} remote")
-
-    return MMLUDataset(processed_dataset, mode=mode)
-
-
-def main(
-    subjects: list[str] = typer.Option(None, help="List of MMLU subjects to load"),
-    split: str = typer.Option("test", help="Dataset split ('auxiliary_train', 'dev', 'test', or 'validation')"),
-    subset_size: int = typer.Option(100, help="Number of examples to load"),
-    mode: str = typer.Option("binary", help="Format to process data in - either 'binary' or 'multiclass'"),
-    load_path: str = typer.Option(None, help="Optional path to load existing processed dataset from"),
-    remote: str = typer.Option("remote_storage", help="Name of the DVC remote to use"),
-) -> None:
-    """CLI interface for processing MMLU datasets."""
-    if load_path:
-        # Pull form dVc if the file doesn't exist locally
-        if not os.path.exists(load_path):
-            repo = Repo(".")
-            repo.pull(remote=remote, target=[load_path])
-
-        dataset = MMLUDataset.from_file(load_path, mode=mode)
-        print(f"Loaded dataset with {len(dataset)} examples from {load_path}")
-    else:
-        dataset = get_processed_datasets(
-            subjects=subjects,
-            split=split,
-            subset_size=subset_size,
-            mode=mode,
-            save_path=f"data/processed/{split}_{mode}_n{subset_size}.dataset",
-            remote=remote,
-        )
-        print(f"Created dataset with {len(dataset)} examples")
-
-
-if __name__ == "__main__":
-    typer.run(main)
+        repo.pull(remote=remote, target=[save_path])
+    return datasets.load_from_disk(save_path, storage_options={"project": "mmlu-bucket"})
