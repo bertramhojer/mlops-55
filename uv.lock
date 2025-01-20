@@ -2068,14 +2068,14 @@ dev = [
     { name = "ruff", specifier = ">=0.9.1" },
 ]
 docs = [
-    { name = "markdown-exec", extras = ["ansi"] },
-    { name = "mkdocs-exclude" },
-    { name = "mkdocs-git-revision-date-localized-plugin" },
-    { name = "mkdocs-glightbox" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-material-extensions" },
-    { name = "mkdocs-same-dir" },
-    { name = "pymdown-extensions" },
+    { name = "markdown-exec", extras = ["ansi"], specifier = ">=1.10.0" },
+    { name = "mkdocs-exclude", specifier = ">=1.0.2" },
+    { name = "mkdocs-git-revision-date-localized-plugin", specifier = ">=1.3.0" },
+    { name = "mkdocs-glightbox", specifier = ">=0.4.0" },
+    { name = "mkdocs-material", specifier = ">=9.5.50" },
+    { name = "mkdocs-material-extensions", specifier = ">=1.3.1" },
+    { name = "mkdocs-same-dir", specifier = ">=0.1.3" },
+    { name = "pymdown-extensions", specifier = ">=10.14" },
 ]
 frontend = [
     { name = "google-cloud-run", specifier = ">=0.10.5" },

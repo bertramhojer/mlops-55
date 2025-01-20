@@ -78,14 +78,14 @@ frontend = [
 ]
 
 docs = [
-  "mkdocs-material",
-  "mkdocs-glightbox",
-  "mkdocs-material-extensions",
-  "pymdown-extensions",
-  "mkdocs-same-dir",
-  "mkdocs-git-revision-date-localized-plugin",
-  "mkdocs-exclude",
-  "markdown-exec[ansi]"
+  "mkdocs-material>=9.5.50",
+  "mkdocs-glightbox>=0.4.0",
+  "mkdocs-material-extensions>=1.3.1",
+  "pymdown-extensions>=10.14",
+  "mkdocs-same-dir>=0.1.3",
+  "mkdocs-git-revision-date-localized-plugin>=1.3.0",
+  "mkdocs-exclude>=1.0.2",
+  "markdown-exec[ansi]>=1.10.0"
 ]
 
 [tool.uv]
