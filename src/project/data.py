@@ -43,9 +43,6 @@ def preprocess_binary(
                 "input_ids": torch.Tensor(encoded["input_ids"][0]),
                 "attention_mask": torch.Tensor(encoded["attention_mask"][0]),
                 "label": torch.Tensor([float(idx == correct_answer)]),
-                "question": question,
-                "choices": choices,
-                "answer": correct_answer,
             }
         )
 
@@ -63,9 +60,6 @@ def preprocess_dataset(
             "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
             "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
             "labels": torch.tensor([ex["label"] for ex in processed]),
-            "question": [ex["question"] for ex in processed],
-            "choices": [ex["choices"] for ex in processed],
-            "answer": [ex["answer"] for ex in processed],
         }
 
     # Process dataset
@@ -78,9 +72,6 @@ def preprocess_dataset(
         "input_ids": [tensor for example in processed["input_ids"] for tensor in example],
         "attention_mask": [tensor for example in processed["attention_mask"] for tensor in example],
         "labels": [label for example in processed["labels"] for label in example],
-        "question": [question for example in processed["question"] for question in example],
-        "choices": [choices for example in processed["choices"] for choices in example],
-        "answer": [answer for example in processed["answer"] for answer in example],
     }
 
     return datasets.Dataset.from_dict(flattened)
@@ -94,50 +85,67 @@ def create_dataset_dict(
     max_length: int,
     subset_size: int | None = None,
     random_seed: int = 42,
-) -> datasets.DatasetDict:
-    """Create a dictionary of preprocessed datasets."""
+) -> tuple[datasets.DatasetDict, datasets.DatasetDict]:
+    """Create two dataset dictionaries: one processed for training and one with original data."""
     if subset_size is not None:
         train = subset_dataset(train, subset_size=subset_size, random_seed=random_seed)
 
-    dataset_train = preprocess_dataset(
-        dataset=train, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=True
-    )
-    dataset_validation = preprocess_dataset(
-        dataset=validation, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
-    )
-    dataset_test = preprocess_dataset(
-        dataset=test, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
-    )
-
-    return datasets.DatasetDict(
+    # Create the processed dataset for training
+    processed_dataset = datasets.DatasetDict(
         {
-            "train": dataset_train,
-            "validation": dataset_validation,
-            "test": dataset_test,
+            "train": preprocess_dataset(
+                dataset=train, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=True
+            ),
+            "validation": preprocess_dataset(
+                dataset=validation, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
+            ),
+            "test": preprocess_dataset(
+                dataset=test, tokenizer=tokenizer, max_length=max_length, is_auxiliary_train=False
+            ),
         }
     )
 
+    # Create the raw dataset for statistics
+    raw_dataset = datasets.DatasetDict(
+        {
+            "train": train,
+            "validation": validation,
+            "test": test,
+        }
+    )
 
-def dataset_to_dvc(data: datasets.DatasetDict, save_path: str, remote: str = "remote_storage") -> None:
-    """Save a dataset to a DVC remote."""
+    return processed_dataset, raw_dataset
+
+
+def dataset_to_dvc(
+    processed_data: datasets.DatasetDict, raw_data: datasets.DatasetDict, save_path: str, remote: str = "remote_storage"
+) -> None:
+    """Save both processed and raw datasets to a DVC remote."""
     save_path = Path(save_path)
-    save_path.parent.mkdir(parents=True, exist_ok=True)
-    data.save_to_disk(save_path)
+    processed_path = save_path / "processed"
+    raw_path = save_path / "raw"
+
+    save_path.mkdir(parents=True, exist_ok=True)
+    processed_path.mkdir(exist_ok=True)
+    raw_path.mkdir(exist_ok=True)
+
+    processed_data.save_to_disk(processed_path)
+    raw_data.save_to_disk(raw_path)
 
     # init dvc repo
     repo = Repo(".")
 
-    # add dataset to dvc
+    # add datasets to dvc
     repo.add(str(save_path))
 
     # push to remote
     repo.push(remote=remote)
 
-    print(f"Saved processed dataset to {save_path} and pushed to {remote} remote")
+    print(f"Saved datasets to {save_path} and pushed to {remote} remote")
 
 
-def load_from_dvc(filepath: str, remote: str = "remote_storage") -> datasets.DatasetDict:
-    """Load a dataset from a DVC remote."""
+def load_from_dvc(filepath: str, remote: str = "remote_storage") -> tuple[datasets.DatasetDict, datasets.DatasetDict]:
+    """Load both processed and raw datasets from a DVC remote."""
     if not os.path.exists(filepath):
         # init dvc repo
         repo = Repo(".")
@@ -145,7 +153,11 @@ def load_from_dvc(filepath: str, remote: str = "remote_storage") -> datasets.Dat
         repo.pull(remote=remote, targets=[filepath])
     else:
         print(f"Dataset already exists at {filepath}")
-    return datasets.load_from_disk(filepath)
+
+    processed_path = Path("data") / "processed" / filepath
+    raw_path = Path("data") / "raw" / filepath
+
+    return (datasets.load_from_disk(processed_path), datasets.load_from_disk(raw_path))
 
 
 if __name__ == "__main__":
@@ -157,7 +169,7 @@ if __name__ == "__main__":
     @app.command()
     def create_dataset(
         subset_size: int | None = typer.Option(None, help="Size of the training subset."),
-        filepath: str = typer.Option("data/processed/mmlu_tiny", help="Path to the dataset."),
+        filepath: str = typer.Option("mmlu_tiny", help="Path to the dataset."),
     ):
         """Create a dataset."""
         print("Loading dataset...")
@@ -166,7 +178,7 @@ if __name__ == "__main__":
         test = datasets.load_dataset("cais/mmlu", "all", split="test")
 
         print("Creating dataset...")
-        dataset = create_dataset_dict(
+        processed_dataset, raw_dataset = create_dataset_dict(
             train=aux_train,
             validation=validation,
             test=test,
@@ -174,7 +186,7 @@ if __name__ == "__main__":
             max_length=512,
             subset_size=subset_size,
         )
-        dataset_to_dvc(dataset, filepath)
+        dataset_to_dvc(processed_dataset, raw_dataset, filepath)
 
     @app.command()
     def load_dataset(path: str = typer.Option(..., help="Path to the dataset.")):
