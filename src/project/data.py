@@ -4,6 +4,7 @@ from typing import Any
 import datasets
 import numpy as np
 import torch
+import typer
 from dvc.repo import Repo
 from transformers import AutoTokenizer
 
@@ -160,37 +161,38 @@ def load_from_dvc(file: str, remote: str = "remote_storage") -> tuple[datasets.D
     return (datasets.load_from_disk(processed_path), datasets.load_from_disk(raw_path))
 
 
+app = typer.Typer()
+tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
+
+
+@app.command()
+def create_dataset(
+    subset_size: int | None = typer.Option(None, help="Size of the training subset."),
+    filepath: str = typer.Option("mmlu_tiny", help="Path to the dataset."),
+):
+    """Create a dataset."""
+    print("Loading dataset...")
+    aux_train = datasets.load_dataset("cais/mmlu", "auxiliary_train", split="train")
+    validation = datasets.load_dataset("cais/mmlu", "all", split="validation")
+    test = datasets.load_dataset("cais/mmlu", "all", split="test")
+
+    print("Creating dataset...")
+    processed_dataset, raw_dataset = create_dataset_dict(
+        train=aux_train,
+        validation=validation,
+        test=test,
+        tokenizer=tokenizer,
+        max_length=512,
+        subset_size=subset_size,
+    )
+    dataset_to_dvc(processed_dataset, raw_dataset, filepath)
+
+
+@app.command()
+def load_dataset(path: str = typer.Option(..., help="Path to the dataset.")):
+    """Load a dataset."""
+    load_from_dvc(path)
+
+
 if __name__ == "__main__":
-    import typer
-
-    app = typer.Typer()
-    tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-
-    @app.command()
-    def create_dataset(
-        subset_size: int | None = typer.Option(None, help="Size of the training subset."),
-        filepath: str = typer.Option("mmlu_tiny", help="Path to the dataset."),
-    ):
-        """Create a dataset."""
-        print("Loading dataset...")
-        aux_train = datasets.load_dataset("cais/mmlu", "auxiliary_train", split="train")
-        validation = datasets.load_dataset("cais/mmlu", "all", split="validation")
-        test = datasets.load_dataset("cais/mmlu", "all", split="test")
-
-        print("Creating dataset...")
-        processed_dataset, raw_dataset = create_dataset_dict(
-            train=aux_train,
-            validation=validation,
-            test=test,
-            tokenizer=tokenizer,
-            max_length=512,
-            subset_size=subset_size,
-        )
-        dataset_to_dvc(processed_dataset, raw_dataset, filepath)
-
-    @app.command()
-    def load_dataset(path: str = typer.Option(..., help="Path to the dataset.")):
-        """Load a dataset."""
-        load_from_dvc(path)
-
     app()

@@ -37,6 +37,7 @@ dependencies = [
 [project.scripts]
 train = "project.train:run"
 stats = "project.datasets_statistics:main"
+preprocess = "project.data:app"
 
 [project.optional-dependencies]
 gpu = [
