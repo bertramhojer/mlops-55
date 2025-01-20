@@ -19,19 +19,16 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy project files
-COPY pyproject.toml uv.lock .
-COPY src/ ./src/
-
-# Create and activate virtual environment
-ENV UV_PROJECT_ENVIRONMENT=/app/.venv
-RUN uv venv
-ENV PATH="/app/.venv/bin:$PATH"
+COPY pyproject.toml .
+COPY uv.lock .
+COPY src/project/data.py ./src/project/data.py
 
 # Install dependencies
 RUN uv sync --frozen
 
-# Create directory for processed data
-RUN mkdir -p data/processed
+# Set default values for environment variables
+ARG SUBSET_SIZE=100
+ARG FILEPATH="mmlu"
 
 # Set the entrypoint to the data processing script
-ENTRYPOINT ["python", "-m", "project.data"]
+ENTRYPOINT ["uv", "run", "preprocess", "create_dataset", "--subset_size", "${SUBSET_SIZE}", "--filepath", "${FILEPATH}"]
