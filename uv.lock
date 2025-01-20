@@ -1852,7 +1852,7 @@ version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
-    { name = "colorama", marker = "(platform_system == 'Windows' and sys_platform != 'linux') or (platform_system != 'Windows' and extra == 'extra-8-mlops-55-cpu' and extra == 'extra-8-mlops-55-gpu') or (sys_platform == 'linux' and extra == 'extra-8-mlops-55-cpu' and extra == 'extra-8-mlops-55-gpu')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'extra-8-mlops-55-cpu' and extra == 'extra-8-mlops-55-gpu')" },
     { name = "ghp-import" },
     { name = "jinja2" },
     { name = "markdown" },
@@ -1977,6 +1977,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "rich" },
     { name = "scikit-learn" },
+    { name = "seaborn" },
     { name = "transformers" },
     { name = "typer" },
     { name = "wandb" },
@@ -2048,6 +2049,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.7.1" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
+    { name = "seaborn", specifier = ">=0.13.2" },
     { name = "torch", marker = "extra == 'cpu'", specifier = ">=2.3.1", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "mlops-55", extra = "cpu" } },
     { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.3.1", index = "https://download.pytorch.org/whl/cu118", conflict = { package = "mlops-55", extra = "gpu" } },
     { name = "transformers", specifier = "==4.48.0" },
@@ -3640,6 +3642,20 @@ wheels = [
 ]
 
 [[package]]
+name = "seaborn"
+version = "0.13.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pandas" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914 },
+]
+
+[[package]]
 name = "semver"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3807,7 +3823,7 @@ dependencies = [
     { name = "toml" },
     { name = "tornado" },
     { name = "typing-extensions" },
-    { name = "watchdog", marker = "platform_system != 'Darwin' or (extra == 'extra-8-mlops-55-cpu' and extra == 'extra-8-mlops-55-gpu')" },
+    { name = "watchdog", marker = "sys_platform != 'darwin' or (extra == 'extra-8-mlops-55-cpu' and extra == 'extra-8-mlops-55-gpu')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/78/33/14b5ac0369ecf0af675911e5e84b934e6fcc2cec850857d2390eb373b0a6/streamlit-1.41.1.tar.gz", hash = "sha256:6626d32b098ba1458b71eebdd634c62af2dd876380e59c4b6a1e828a39d62d69", size = 8712473 }
 wheels = [

@@ -30,6 +30,7 @@ dependencies = [
     "dvc>=3.59.0",
     "dvc-gs>=3.0.1",
     "matplotlib>=3.10.0",
+    "seaborn>=0.13.2",
 ]
 
 
