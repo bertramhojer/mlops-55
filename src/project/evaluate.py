@@ -1,12 +1,11 @@
 import json
 import pathlib
 from collections import Counter
+from typing import TYPE_CHECKING
 
 import hydra
 import numpy as np
 import pandas as pd
-import pydantic
-import pydantic_settings
 import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import Callback
@@ -15,29 +14,21 @@ from loguru import logger
 from omegaconf import DictConfig
 from sklearn.metrics import accuracy_score, f1_score
 
-from project.configs import DatasetConfig, TestConfig
-from project.data import get_processed_datasets
+from project.configs import TestConfig
+from project.data import load_from_dvc
 from project.model import ModernBERTQA
-from project.tools import hydra_to_pydantic, pprint_config, validate_env_variables
+from project.tools import hydra_to_pydantic, pprint_config
+
+if TYPE_CHECKING:
+    import datasets
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-validate_env_variables()
-
-class TestConfig(pydantic_settings.BaseSettings):
-    """Configuration for running experiements."""
-
-    project_name: str = pydantic.Field(..., description="Name of project")
-    datamodule: DatasetConfig = pydantic.Field(..., description="Dataset configuration")
-    test: TestConfig = pydantic.Field(..., description="Testing configuration")
-
-    model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
-
-
 
 class StoreTestPreds(Callback):
     """Callback to store test predictions and labels."""
+
     def __init__(self):
         self.test_logits = []
         self.test_labels = []
@@ -47,6 +38,7 @@ class StoreTestPreds(Callback):
         self.test_logits.extend(batch["logits"].argmax(dim=-1).cpu().numpy())
         self.test_labels.extend(batch["labels"].cpu().numpy())
 
+
 @hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="test_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
@@ -54,10 +46,8 @@ def run(cfg: DictConfig) -> None:
     pprint_config(cfg)
     run_test(config)
 
-if (
-    torch.cuda.is_available()
-    and torch.version.cuda.split(".")[0] == "11"
-):
+
+if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":
     # Will enable run on certain servers, do no delete
     import torch._dynamo  # noqa: F401
 
@@ -68,17 +58,9 @@ def run_test(config: TestConfig):
     """Train model, saves model to output_dir."""
     # Load processed datasets
     logger.info("Loading datasets...")
-    test_dataset = get_processed_datasets(
-        source_split="auxiliary_train",
-        subjects=config.datamodule.subjects,
-        mode=config.datamodule.mode,
-        train_size=config.datamodule.train_subset_size,
-        val_size=config.datamodule.val_subset_size,
-        test_size=config.datamodule.test_subset_size,
-    )["test"]
-
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.test.batch_size, shuffle=False)
-
+    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    test_dataset: datasets.Dataset = dataset["test"]
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False)
 
     # Load pretrained model from models and evaluate
     checkpoint_file = next(f for f in pathlib.Path(config.test.checkpoint_dir).iterdir() if f.suffix == ".ckpt").name
@@ -111,27 +93,21 @@ def run_test(config: TestConfig):
     true_label_distribution = {cls: label_counts[cls] / len(all_labels) for cls in range(class_counts)}
     predicted_label_distribution = {cls: pred_counts[cls] / len(all_preds) for cls in range(class_counts)}
     label_biases = {
-        cls: abs(predicted_label_distribution.get(cls, 0)
-                 - true_label_distribution.get(cls, 0)) for cls in range(class_counts)
+        cls: abs(predicted_label_distribution.get(cls, 0) - true_label_distribution.get(cls, 0))
+        for cls in range(class_counts)
     }
 
     # Save evaluation results
     output_path = pathlib.Path(config.test.output_dir) / "evaluation_results.json"
     with open(output_path, "w") as f:
-        results_dict = {
-            "results": results,
-            "f1": f1,
-            "accuracy": accuracy,
-            "label_biases": label_biases
-        }
+        results_dict = {"results": results, "f1": f1, "accuracy": accuracy, "label_biases": label_biases}
         json.dump(results_dict, f, indent=4)
     logger.info(f"Evaluation results saved to output_path: {output_path}")
 
     label_biases_table = pd.DataFrame(label_biases.items(), columns=["Label", "Bias"])
-    results_table = pd.DataFrame({
-        "Metric": ["F1", "Accuracy", "Test Loss"],
-        "Value": [f1, accuracy, results[0]["test_loss"]]
-    })
+    results_table = pd.DataFrame(
+        {"Metric": ["F1", "Accuracy", "Test Loss"], "Value": [f1, accuracy, results[0]["test_loss"]]}
+    )
 
     wandb_logger.log_table("Evaluation Results", dataframe=results_table)
     wandb_logger.log_table("Label Biases", dataframe=label_biases_table)

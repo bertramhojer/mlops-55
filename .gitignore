@@ -190,4 +190,3 @@ cython_debug/
 
 # Hydra outputs
 outputs/
-/mmlu_tiny_split

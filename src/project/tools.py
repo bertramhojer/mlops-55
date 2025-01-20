@@ -1,4 +1,3 @@
-import os
 import typing
 from copy import copy
 from numbers import Number
@@ -6,7 +5,6 @@ from numbers import Number
 import pydantic
 import rich
 import yaml
-from dotenv import load_dotenv
 from omegaconf import (
     DictConfig,
     ListConfig,
@@ -88,16 +86,3 @@ def _prune_keys(x: typing.Any | dict | list, exclude: list[str]) -> None:  # noq
     elif isinstance(x, list):
         for item in x:
             _prune_keys(item, exclude)
-
-
-def validate_env_variables():
-    """loads and validates environment variables."""
-    load_dotenv()
-
-    # Check if os.environ has WANDB_PROJECT, WANDB_ENTITY, WANDB_API_KEY
-    if not all(
-        key in os.environ and os.environ[key]
-        for key in ["WANDB_PROJECT", "WANDB_ENTITY", "WANDB_API_KEY"]
-    ):
-        raise ValueError("Please set WANDB_PROJECT, WANDB_ENTITY, WANDB_API_KEY in environment variables. Consider creating a .env file.")
-

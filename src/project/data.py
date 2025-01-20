@@ -67,7 +67,7 @@ def preprocess_dataset(
         process_binary, remove_columns=dataset.column_names, batched=False, desc="Processing examples"
     )
 
-    # Flatten the dataset
+    # First convert lists to tensors, then flatten
     flattened = {
         "input_ids": [tensor for example in processed["input_ids"] for tensor in example],
         "attention_mask": [tensor for example in processed["attention_mask"] for tensor in example],
@@ -165,6 +165,13 @@ if __name__ == "__main__":
 
     app = typer.Typer()
     tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
+
+    @app.command()
+    def create_dataset_local(
+        subset_size: int | None = typer.Option(None, help="Size of the training subset."),
+        filepath: str = typer.Option("data/processed/mmlu_tiny", help="Path to the dataset."),
+    ):
+        """Create a dataset."""
 
     @app.command()
     def create_dataset(
