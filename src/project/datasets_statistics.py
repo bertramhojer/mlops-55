@@ -49,9 +49,9 @@ def histogram_bar_chart(data: dict[str, Counter]):
     return fig
 
 
-def main(datadir: str = "mmlu_tiny_raw") -> None:
+def main(file: str = "mmlu_tiny_raw") -> None:
     """Compute dataset statistics."""
-    dataset = load_from_dvc(filepath=datadir)
+    _, dataset = load_from_dvc(file=file)
     print(f"Dataset: {dataset}")
 
     labels = {split: dset["answer"] for split, dset in dataset.items()}
