@@ -1,4 +1,0 @@
-outs:
-- hash: md5
-  path: test_binary_n100.dataset
-  files: []

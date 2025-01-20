@@ -57,11 +57,23 @@ def run_train(config: ExperimentConfig):
 
     # Load processed datasets
     logger.info(f"Loading datasets from {config.datamodule.data_path}...")
+
+    def collate_fn(batch):
+        return {
+            "input_ids": torch.stack([torch.tensor(item["input_ids"]) for item in batch]).long(),
+            "attention_mask": torch.stack([torch.tensor(item["attention_mask"]) for item in batch]).long(),
+            "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
+        }
+
     dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
     train_dataset: datasets.Dataset = dataset["train"]
     val_dataset: datasets.Dataset = dataset["validation"]
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)  # type: ignore  # noqa: PGH003
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config.train.batch_size, shuffle=False)  # type: ignore  # noqa: PGH003
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=config.train.batch_size, shuffle=True, collate_fn=collate_fn
+    )  # type: ignore  # noqa: PGH003
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=config.train.batch_size, shuffle=False, collate_fn=collate_fn
+    )  # type: ignore  # noqa: PGH003
 
     # Initialize model
     model = ModernBERTQA(
@@ -85,7 +97,7 @@ def run_train(config: ExperimentConfig):
         default_root_dir=train_output_dir,
         logger=wandb_logger,
         log_every_n_steps=5,
-        precision="bf16-true",
+        precision="32",
     )
     trainer.fit(
         model=model,

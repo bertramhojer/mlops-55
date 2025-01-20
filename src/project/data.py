@@ -40,9 +40,9 @@ def preprocess_binary(
 
         processed_examples.append(
             {
-                "input_ids": torch.Tensor(encoded["input_ids"][0]),
-                "attention_mask": torch.Tensor(encoded["attention_mask"][0]),
-                "label": torch.Tensor([float(idx == correct_answer)]),
+                "input_ids": encoded["input_ids"][0].long(),  # Ensure integer type
+                "attention_mask": encoded["attention_mask"][0].long(),  # Ensure integer type
+                "label": torch.tensor([float(idx == correct_answer)], dtype=torch.float),
             }
         )
 
@@ -57,9 +57,9 @@ def preprocess_dataset(
     def process_binary(example: dict[str, Any]) -> dict[str, torch.Tensor]:
         processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train)
         return {
-            "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
-            "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
-            "labels": torch.tensor([ex["label"] for ex in processed]),
+            "input_ids": torch.stack([ex["input_ids"] for ex in processed]).long(),
+            "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]).long(),
+            "labels": torch.stack([ex["label"] for ex in processed]),
         }
 
     # Process dataset
@@ -67,11 +67,11 @@ def preprocess_dataset(
         process_binary, remove_columns=dataset.column_names, batched=False, desc="Processing examples"
     )
 
-    # Flatten the dataset
+    # First convert lists to tensors, then flatten
     flattened = {
-        "input_ids": torch.Tensor([tensor for example in processed["input_ids"] for tensor in example]),
-        "attention_mask": torch.Tensor([tensor for example in processed["attention_mask"] for tensor in example]),
-        "labels": torch.Tensor([label for example in processed["labels"] for label in example]),
+        "input_ids": torch.cat([torch.tensor(example) for example in processed["input_ids"]]).long(),
+        "attention_mask": torch.cat([torch.tensor(example) for example in processed["attention_mask"]]).long(),
+        "labels": torch.cat([torch.tensor(example) for example in processed["labels"]]).float(),
     }
 
     return datasets.Dataset.from_dict(flattened)
@@ -144,6 +144,13 @@ if __name__ == "__main__":
 
     app = typer.Typer()
     tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
+
+    @app.command()
+    def create_dataset_local(
+        subset_size: int | None = typer.Option(None, help="Size of the training subset."),
+        filepath: str = typer.Option("data/processed/mmlu_tiny", help="Path to the dataset."),
+    ):
+        """Create a dataset."""
 
     @app.command()
     def create_dataset(
