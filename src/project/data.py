@@ -103,8 +103,11 @@ def create_dataset_dict(
     return datasets.DatasetDict(
         {
             "train": dataset_train,
+            "train_raw": train,
             "validation": dataset_validation,
+            "validation_raw": validation,
             "test": dataset_test,
+            "test_raw": test,
         }
     )
 
