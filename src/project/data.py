@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any
 
@@ -118,44 +117,45 @@ def create_dataset_dict(
 
 
 def dataset_to_dvc(
-    processed_data: datasets.DatasetDict, raw_data: datasets.DatasetDict, save_path: str, remote: str = "remote_storage"
+    processed_data: datasets.DatasetDict, raw_data: datasets.DatasetDict, file: str, remote: str = "remote_storage"
 ) -> None:
     """Save both processed and raw datasets to a DVC remote."""
-    save_path = Path(save_path)
-    processed_path = save_path / "processed"
-    raw_path = save_path / "raw"
+    # Create base paths
+    processed_path = Path("data/processed") / file
+    raw_path = Path("data/raw") / file
 
-    save_path.mkdir(parents=True, exist_ok=True)
-    processed_path.mkdir(exist_ok=True)
-    raw_path.mkdir(exist_ok=True)
+    # Create directories
+    processed_path.mkdir(parents=True, exist_ok=True)
+    raw_path.mkdir(parents=True, exist_ok=True)
 
+    # Save datasets
     processed_data.save_to_disk(processed_path)
     raw_data.save_to_disk(raw_path)
 
     # init dvc repo
     repo = Repo(".")
 
-    # add datasets to dvc
-    repo.add(str(save_path))
+    # add datasets to dvc (add both directories)
+    repo.add(str(processed_path))
+    repo.add(str(raw_path))
 
     # push to remote
     repo.push(remote=remote)
 
-    print(f"Saved datasets to {save_path} and pushed to {remote} remote")
 
-
-def load_from_dvc(filepath: str, remote: str = "remote_storage") -> tuple[datasets.DatasetDict, datasets.DatasetDict]:
+def load_from_dvc(file: str, remote: str = "remote_storage") -> tuple[datasets.DatasetDict, datasets.DatasetDict]:
     """Load both processed and raw datasets from a DVC remote."""
-    if not os.path.exists(filepath):
+    # Create paths
+    processed_path = Path("data/processed") / file
+    raw_path = Path("data/raw") / file
+
+    if not processed_path.exists() or not raw_path.exists():
         # init dvc repo
         repo = Repo(".")
         # pull dataset from dvc
-        repo.pull(remote=remote, targets=[filepath])
+        repo.pull(remote=remote, targets=[str(processed_path), str(raw_path)])
     else:
-        print(f"Dataset already exists at {filepath}")
-
-    processed_path = Path("data") / "processed" / filepath
-    raw_path = Path("data") / "raw" / filepath
+        print(f"Datasets already exist at {processed_path} and {raw_path}")
 
     return (datasets.load_from_disk(processed_path), datasets.load_from_disk(raw_path))
 
