@@ -1,3 +1,4 @@
+import typing
 from typing import TYPE_CHECKING
 
 import hydra
@@ -56,7 +57,7 @@ def run_train(config: ExperimentConfig):
     wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
 
     # Load processed datasets
-    logger.info(f"Loading datasets from {config.datamodule.data_path}...")
+    logger.info(f"Loading datasets from {config.datamodule.file_name}...")
 
     def collate_fn(batch):
         return {
@@ -65,15 +66,21 @@ def run_train(config: ExperimentConfig):
             "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
         }
 
-    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
-    train_dataset: datasets.Dataset = dataset["train"]
-    val_dataset: datasets.Dataset = dataset["validation"]
+    proc_dataset, _ = load_from_dvc(config.datamodule.file_name)
+    train_dataset: datasets.Dataset = proc_dataset["train"]
+    val_dataset: datasets.Dataset = proc_dataset["validation"]
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=config.train.batch_size, shuffle=True, collate_fn=collate_fn
-    )  # type: ignore  # noqa: PGH003
+        typing.cast(torch.utils.data.Dataset, train_dataset),
+        batch_size=config.train.batch_size,
+        shuffle=True,
+        collate_fn=collate_fn,
+    )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=config.train.batch_size, shuffle=False, collate_fn=collate_fn
-    )  # type: ignore  # noqa: PGH003
+        typing.cast(torch.utils.data.Dataset, val_dataset),
+        batch_size=config.train.batch_size,
+        shuffle=False,
+        collate_fn=collate_fn,
+    )
 
     # Initialize model
     model = ModernBERTQA(

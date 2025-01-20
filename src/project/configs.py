@@ -7,7 +7,7 @@ import pydantic
 class DatasetConfig(pydantic.BaseModel):
     """Configuration for data module."""
 
-    data_path: str = pydantic.Field(..., description="Path to data directory in DVC")
+    file_name: str = pydantic.Field(..., description="Name of the file in DVC")
 
 
 class OptimizerConfig(pydantic.BaseModel):
