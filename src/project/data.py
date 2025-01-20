@@ -107,7 +107,7 @@ def create_dataset_dict(
     # Create the raw dataset for statistics
     raw_dataset = datasets.DatasetDict(
         {
-            "train": train["train"],
+            "train": datasets.Dataset.from_list(train["train"]),
             "validation": validation,
             "test": test,
         }
@@ -165,13 +165,6 @@ if __name__ == "__main__":
 
     app = typer.Typer()
     tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-
-    @app.command()
-    def create_dataset_local(
-        subset_size: int | None = typer.Option(None, help="Size of the training subset."),
-        filepath: str = typer.Option("data/processed/mmlu_tiny", help="Path to the dataset."),
-    ):
-        """Create a dataset."""
 
     @app.command()
     def create_dataset(
