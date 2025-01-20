@@ -25,7 +25,12 @@
                 "tamasfe.even-better-toml",
                 "shardulm94.trailing-spaces",
                 "yzhang.markdown-all-in-one"
-            ]
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
+                "python.analysis.autoSearchPaths": true,
+                "python.analysis.extraPaths": ["/home/vscode/.venv/lib/python3.12/site-packages"]
+            }
         }
     },
     "containerEnv": {
@@ -35,9 +40,14 @@
         "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv"
     },
     "mounts": [
-        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind",
+        "source=${env:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
+        "source=${env:HOME}/.config/gcloud/application_default_credentials.json,target=/home/vscode/.config/gcloud/application_default_credentials.json,type=bind,consistency=cached"
     ],
     "postCreateCommand": "uv sync --frozen",
-    "postStartCommand": "uv run pre-commit install",
-    "remoteUser": "vscode"
+    "postStartCommand": "uv run pre-commit install && gcloud auth login && dvc pull",
+    "remoteUser": "vscode",
+    "remoteEnv": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/home/vscode/.config/gcloud/application_default_credentials.json"
+    }
 }

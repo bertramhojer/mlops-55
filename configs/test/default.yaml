@@ -1,0 +1,5 @@
+seed: 42
+checkpoint_dir: "models/exp1/"
+output_dir: "models/exp1/"
+device: "cpu"
+batch_size: 32

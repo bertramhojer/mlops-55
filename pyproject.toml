@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mlops-multimodal-ehr"
+name = "mlops-55"
 version = "0.1.0"
 description = "Add your description here"
 authors = [
@@ -15,38 +15,67 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
-    "pydantic",
-    "pydantic-settings",
-    "torch",
-    "transformers",
-    "datasets",
-    "typer"
+    "pydantic>=2.10.5",
+    "pydantic-settings>=2.7.1",
+    "transformers==4.48.0",
+    "datasets>=3.2.0",
+    "typer>=0.15.1",
+    "lightning>=2.5.0.post0",
+    "scikit-learn>=1.6.1",
+    "hydra-core>=1.3.2",
+    "rich>=13.9.4",
+    "loguru>=0.7.3",
+    "omegaconf>=2.3.0",
+    "wandb>=0.19.3",
+    "dvc>=3.59.0",
+    "dvc-gs>=3.0.1",
+    "matplotlib>=3.10.0",
+    "seaborn>=0.13.2",
 ]
+
+
+[project.scripts]
+train = "project.train:run"
+stats = "project.datasets_statistics:main"
 
 [project.optional-dependencies]
 gpu = [
+    "torch>=2.3.1",
     "bitsandbytes>=0.43.2",
     "flash-attn<=2.6.2",
+]
+cpu = [
+    "torch>=2.3.1"
 ]
 
 [dependency-groups]
 dev = [
-    "ruff",
-    "codespell",
-    "pre-commit",
-    "ipython",
-    "ipykernel",
-    "invoke",
+    "ruff>=0.9.1",
+    "codespell>=2.3.0",
+    "pre-commit>=2.15.0",
+    "ipython>=8.0.1",
+    "ipykernel>=6.4.1",
+    "invoke>=1.7.1",
 ]
 
 test = [
-    "pytest",
-    "coverage",
-    "python-dotenv",
-    "pipreqs",
-    "mypy",
+    "pytest>=7.0.1",
+    "pytest-check>=2.4.1",
+    "coverage>=6.3.2",
+    "python-dotenv>=0.19.1",
+    "pipreqs>=0.4.10",
+    "mypy>=0.910.0",
 ]
 
+cpu = [
+    "torch>=2.3.1",
+]
+
+frontend = [
+    "streamlit>=1.28.2",
+    "pandas>=2.1.3",
+    "google-cloud-run>=0.10.5",
+]
 
 docs = [
   "mkdocs-material",
@@ -60,8 +89,30 @@ docs = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "test", "docs"]
+conflicts = [
+  [
+    { extra = "cpu" },
+    { extra = "gpu" },
+  ],
+]
+default-groups = ["dev", "test", "cpu"]
 no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu118", extra = "gpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
 
 [tool.ruff]
 line-length = 120
@@ -145,3 +196,6 @@ arange = "arange"
 [tool.typos.default.extend-words]
 Ue = "Ue"
 Hashi = "Hashi"
+
+[tool.setuptools]
+packages.find = {where = ["src"], include = ["project*"]}
