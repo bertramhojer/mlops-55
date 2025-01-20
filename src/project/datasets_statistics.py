@@ -1,5 +1,6 @@
 from collections import Counter
 
+import datasets
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -52,20 +53,11 @@ def histogram_bar_chart(data: dict[str, Counter]):
 def main(file: str = "mmlu") -> None:
     """Compute dataset statistics."""
     _, dataset = load_from_dvc(file=file)
-    dataset["train"] = dataset["train"]["train"]  # This line seems fine if needed for your structure
-    print(f"Dataset: {dataset}")
+    dataset["train"] = datasets.Dataset.from_list(
+        dataset["train"]["train"]
+    )  # This line seems fine if needed for your structure
 
-    # Modified part to handle the dataset structure correctly
-    labels = {}
-    for split, dset in dataset.items():
-        if hasattr(dset, "features"):  # Check if it's a Dataset object
-            labels[split] = dset["answer"]
-        elif isinstance(dset, list):  # Handle list case
-            labels[split] = [item["answer"] for item in dset]
-        else:
-            print(f"Warning: Unexpected type for split {split}: {type(dset)}")
-            continue
-
+    labels = {split: dset["answer"] for split, dset in dataset.items()}
     # Rest of your code remains the same
     splits = list(dataset.keys())
     labels_count = {split: Counter(lst) for split, lst in labels.items()}
