@@ -42,8 +42,6 @@ jobs:
     - name: Check data statistics & generate report
       run: |
         uv run stats > data_statistics.md
-
-        python src/example_mlops/data.py > data_statistics.md
         echo '![](./labels_count.png "Labels Distribution")' >> data_statistics.md
 
     - name: Setup cml
