@@ -1,0 +1,3 @@
+outs:
+- hash: md5
+  path: mmlu_tiny.dataset
