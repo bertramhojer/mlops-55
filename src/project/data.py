@@ -107,7 +107,7 @@ def create_dataset_dict(
     # Create the raw dataset for statistics
     raw_dataset = datasets.DatasetDict(
         {
-            "train": train,
+            "train": train["train"],
             "validation": validation,
             "test": test,
         }
