@@ -40,9 +40,12 @@ def preprocess_binary(
 
         processed_examples.append(
             {
-                "input_ids": encoded["input_ids"][0].long(),  # Ensure integer type
-                "attention_mask": encoded["attention_mask"][0].long(),  # Ensure integer type
-                "label": torch.tensor([float(idx == correct_answer)], dtype=torch.float),
+                "input_ids": torch.Tensor(encoded["input_ids"][0]),
+                "attention_mask": torch.Tensor(encoded["attention_mask"][0]),
+                "label": torch.Tensor([float(idx == correct_answer)]),
+                "question": question,
+                "choices": choices,
+                "answer": correct_answer,
             }
         )
 
@@ -57,9 +60,12 @@ def preprocess_dataset(
     def process_binary(example: dict[str, Any]) -> dict[str, torch.Tensor]:
         processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train)
         return {
-            "input_ids": torch.stack([ex["input_ids"] for ex in processed]).long(),
-            "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]).long(),
-            "labels": torch.stack([ex["label"] for ex in processed]),
+            "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
+            "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
+            "labels": torch.tensor([ex["label"] for ex in processed]),
+            "question": [ex["question"] for ex in processed],
+            "choices": [ex["choices"] for ex in processed],
+            "answer": [ex["answer"] for ex in processed],
         }
 
     # Process dataset
@@ -69,9 +75,12 @@ def preprocess_dataset(
 
     # First convert lists to tensors, then flatten
     flattened = {
-        "input_ids": torch.cat([torch.tensor(example) for example in processed["input_ids"]]).long(),
-        "attention_mask": torch.cat([torch.tensor(example) for example in processed["attention_mask"]]).long(),
-        "labels": torch.cat([torch.tensor(example) for example in processed["labels"]]).float(),
+        "input_ids": [tensor for example in processed["input_ids"] for tensor in example],
+        "attention_mask": [tensor for example in processed["attention_mask"] for tensor in example],
+        "labels": [label for example in processed["labels"] for label in example],
+        "question": [question for example in processed["question"] for question in example],
+        "choices": [choices for example in processed["choices"] for choices in example],
+        "answer": [answer for example in processed["answer"] for answer in example],
     }
 
     return datasets.Dataset.from_dict(flattened)
@@ -103,11 +112,8 @@ def create_dataset_dict(
     return datasets.DatasetDict(
         {
             "train": dataset_train,
-            "train_raw": train,
             "validation": dataset_validation,
-            "validation_raw": validation,
             "test": dataset_test,
-            "test_raw": test,
         }
     )
 
