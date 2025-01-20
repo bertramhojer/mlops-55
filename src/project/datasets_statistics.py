@@ -52,15 +52,22 @@ def histogram_bar_chart(data: dict[str, Counter]):
 def main(file: str = "mmlu") -> None:
     """Compute dataset statistics."""
     _, dataset = load_from_dvc(file=file)
-    dataset["train"] = dataset["train"]["train"]
+    dataset["train"] = dataset["train"]["train"]  # This line seems fine if needed for your structure
     print(f"Dataset: {dataset}")
 
-    labels = {split: dset["answer"] for split, dset in dataset.items()}
+    # Modified part to handle the dataset structure correctly
+    labels = {}
+    for split, dset in dataset.items():
+        if hasattr(dset, "features"):  # Check if it's a Dataset object
+            labels[split] = dset["answer"]
+        elif isinstance(dset, list):  # Handle list case
+            labels[split] = [item["answer"] for item in dset]
+        else:
+            print(f"Warning: Unexpected type for split {split}: {type(dset)}")
+            continue
 
-    # Prepare data for plotting
+    # Rest of your code remains the same
     splits = list(dataset.keys())
-
-    # Labels distribution
     labels_count = {split: Counter(lst) for split, lst in labels.items()}
 
     labels_chart = grouped_bar_chart(labels_count)
