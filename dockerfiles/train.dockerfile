@@ -1,17 +1,42 @@
-# Base image
-FROM python:3.12-slim AS base
+# Get UV from the official image
+FROM ghcr.io/astral-sh/uv:0.5.13 AS uv
 
-RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# Start with Python 3.12 base image
+FROM python:3.12-slim-bookworm
 
-COPY src src/
-COPY requirements.txt requirements.txt
-COPY requirements_dev.txt requirements_dev.txt
-COPY README.md README.md
-COPY pyproject.toml pyproject.toml
+# Copy UV from the first stage
+COPY --from=uv /uv /uvx /bin/
 
-RUN pip install -r requirements.txt --no-cache-dir --verbose
-RUN pip install . --no-deps --no-cache-dir --verbose
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["python", "-u", "src/project/train.py"]
+# Set up working directory
+WORKDIR /app
+
+# Copy project files
+COPY pyproject.toml .
+COPY uv.lock .
+COPY configs ./configs
+COPY src/project/ ./src/project/
+
+# Install dependencies conditionally based on GPU availability
+RUN if lspci | grep -i nvidia > /dev/null 2>&1; then \
+        echo "GPU detected, installing GPU dependencies"; \
+        uv sync --frozen --extra train --extra gpu; \
+    else \
+        echo "No GPU detected, installing CPU-only dependencies"; \
+        uv sync --frozen --extra train; \
+    fi
+
+# Set default values for environment variables
+ARG OPTIMIZER=adam
+ARG DATAMODULE=default
+ARG TRAIN=default
+
+# Set the entrypoint to the data processing script
+CMD ["sh", "-c", "uv run train +optimizer=${OPTIMIZER} +datamodule=${DATAMODULE} +train=${TRAIN}"]

@@ -20,17 +20,9 @@ dependencies = [
     "transformers==4.48.0",
     "datasets>=3.2.0",
     "typer>=0.15.1",
-    "lightning>=2.5.0.post0",
-    "scikit-learn>=1.6.1",
-    "hydra-core>=1.3.2",
-    "rich>=13.9.4",
     "loguru>=0.7.3",
-    "omegaconf>=2.3.0",
-    "wandb>=0.19.3",
     "dvc>=3.59.0",
     "dvc-gs>=3.0.1",
-    "matplotlib>=3.10.0",
-    "seaborn>=0.13.2",
 ]
 
 
@@ -40,13 +32,29 @@ stats = "project.datasets_statistics:main"
 preprocess = "project.data:app"
 
 [project.optional-dependencies]
+
+train = [
+    "wandb>=0.19.3",
+    "omegaconf>=2.3.0",
+    "lightning>=2.5.0.post0",
+    "scikit-learn>=1.6.1",
+    "hydra-core==1.3.2",
+    "hydra-colorlog==1.2.0",
+    "hydra-optuna-sweeper==1.2.0",
+    "rich>=13.9.4",
+    "torch>=2.3.1",
+]
+
 gpu = [
     "torch>=2.3.1",
     "bitsandbytes>=0.43.2",
     "flash-attn<=2.6.2",
 ]
-cpu = [
-    "torch>=2.3.1"
+
+frontend = [
+    "streamlit>=1.28.2",
+    "pandas>=2.1.3",
+    "google-cloud-run>=0.10.5",
 ]
 
 [dependency-groups]
@@ -57,6 +65,8 @@ dev = [
     "ipython>=8.0.1",
     "ipykernel>=6.4.1",
     "invoke>=1.7.1",
+    "matplotlib>=3.10.0",
+    "seaborn>=0.13.2",
 ]
 
 test = [
@@ -66,16 +76,6 @@ test = [
     "python-dotenv>=0.19.1",
     "pipreqs>=0.4.10",
     "mypy>=0.910.0",
-]
-
-cpu = [
-    "torch>=2.3.1",
-]
-
-frontend = [
-    "streamlit>=1.28.2",
-    "pandas>=2.1.3",
-    "google-cloud-run>=0.10.5",
 ]
 
 docs = [
@@ -92,16 +92,16 @@ docs = [
 [tool.uv]
 conflicts = [
   [
-    { extra = "cpu" },
+    { extra = "train" },
     { extra = "gpu" },
   ],
 ]
-default-groups = ["dev", "test", "cpu"]
+default-groups = ["dev", "test"]
 no-build-isolation-package = ["flash-attn"]
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cpu", extra = "train" },
     { index = "pytorch-cu118", extra = "gpu" },
 ]
 

@@ -1,7 +1,6 @@
 import typing
 from typing import TYPE_CHECKING
 
-import hydra
 import pydantic
 import pydantic_settings
 import torch
@@ -11,6 +10,7 @@ from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
 
+import hydra
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
@@ -29,10 +29,10 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     optimizer: OptimizerConfig = pydantic.Field(..., description="Optimizer configuration")
     train: TrainConfig = pydantic.Field(..., description="Training configuration")
 
-    model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
+    model_config = pydantic_settings.SettingsConfigDict(extra="ignore", frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(settings.PROJECT_DIR / "configs"), config_name="train_config")
+@hydra.main(version_base="1.3", config_path=str(settings.PROJECT_DIR / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)

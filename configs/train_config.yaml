@@ -1,6 +1,15 @@
+# @package _global_
+
+# specify here default configuration
+# order of defaults determines the order in which configs override each other
 defaults:
-  - datamodule/default
-  - train/default
-  - optimizer/sgd
+  - _self_
+  - datamodule: default
+  - optimizer: sgd
+  - train: default
+
+  # experiment configs allow for version control of specific hyperparameters
+  # e.g. best hyperparameters for given model and datamodule
+  - experiment: null
 
 project_name: "MMLU Classification"

@@ -1,0 +1,10 @@
+seed: 42
+model_name: "answerdotai/ModernBERT-base"
+device: "cpu"
+epochs: 10
+batch_size: 32
+eval_batch_size: 8
+output_dir: "models/exp1"
+monitor: "val_loss"
+mode: "min"
+patience: 5
