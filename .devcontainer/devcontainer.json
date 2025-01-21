@@ -45,7 +45,7 @@
         "source=${env:HOME}/.config/gcloud/application_default_credentials.json,target=/home/vscode/.config/gcloud/application_default_credentials.json,type=bind,consistency=cached"
     ],
     "postCreateCommand": "uv sync --frozen",
-    "postStartCommand": "uv run pre-commit install",
+    "postStartCommand": "uv run pre-commit install && gcloud auth login && dvc pull",
     "remoteUser": "vscode",
     "remoteEnv": {
         "GOOGLE_APPLICATION_CREDENTIALS": "/home/vscode/.config/gcloud/application_default_credentials.json"

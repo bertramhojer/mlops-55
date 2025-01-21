@@ -1,4 +1,4 @@
-import pathlib
+from typing import TYPE_CHECKING
 
 import hydra
 import pydantic
@@ -6,16 +6,18 @@ import pydantic_settings
 import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
 
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
-from project.data import get_processed_datasets
+from project.data import load_from_dvc
 from project.model import ModernBERTQA
+from project.settings import settings
 from project.tools import hydra_to_pydantic, pprint_config
 
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+if TYPE_CHECKING:
+    import datasets
 
 
 class ExperimentConfig(pydantic_settings.BaseSettings):
@@ -29,7 +31,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="config")
+@hydra.main(version_base=None, config_path=str(settings.PROJECT_DIR / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
@@ -37,11 +39,7 @@ def run(cfg: DictConfig) -> None:
     run_train(config)
 
 
-if (
-    torch.cuda.is_available()
-    and torch.cuda.get_device_properties(0).major == 11
-    and torch.cuda.get_device_properties(0).minor == 1
-):
+if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # type: ignore  # noqa: PGH003
     # Will enable run on certain servers, do no delete
     import torch._dynamo  # noqa: F401
 
@@ -53,36 +51,38 @@ def run_train(config: ExperimentConfig):
 
     TODO: fix binary classification.
     """
+    train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
+
+    wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
+
     # Load processed datasets
-    logger.info("Loading datasets...")
-    train_dataset = get_processed_datasets(
-        split="auxiliary_train",  # TODO: confirm with Bertram this is right?
-        subjects=config.datamodule.subjects,
-        mode=config.datamodule.mode,
-        subset_size=config.datamodule.train_subset_size,
-    )
+    logger.info(f"Loading datasets from {config.datamodule.data_path}...")
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True)
-    val_dataset = get_processed_datasets(
-        split="validation",
-        subjects=config.datamodule.subjects,
-        mode=config.datamodule.mode,
-        subset_size=config.datamodule.val_subset_size,
-    )
+    def collate_fn(batch):
+        return {
+            "input_ids": torch.stack([torch.tensor(item["input_ids"]) for item in batch]).long(),
+            "attention_mask": torch.stack([torch.tensor(item["attention_mask"]) for item in batch]).long(),
+            "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
+        }
 
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=config.train.batch_size, shuffle=False)
-
-    num_choices = train_dataset.__getoptions__()
+    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    train_dataset: datasets.Dataset = dataset["train"]
+    val_dataset: datasets.Dataset = dataset["validation"]
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=config.train.batch_size, shuffle=True, collate_fn=collate_fn
+    )  # type: ignore  # noqa: PGH003
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=config.train.batch_size, shuffle=False, collate_fn=collate_fn
+    )  # type: ignore  # noqa: PGH003
 
     # Initialize model
     model = ModernBERTQA(
         config.train.model_name,
-        num_choices=num_choices,
         optimizer_cls=getattr(torch.optim, config.optimizer.optimizer_name),
         optimizer_params=config.optimizer.optimizer_params,
     )
     checkpoint_callback = ModelCheckpoint(
-        dirpath=config.train.output_dir, monitor=config.train.monitor, mode=config.train.mode
+        dirpath=train_output_dir, monitor=config.train.monitor, mode=config.train.mode
     )
     early_stopping_callback = EarlyStopping(
         monitor=config.train.monitor, patience=config.train.patience, verbose=True, mode=config.train.mode
@@ -91,16 +91,23 @@ def run_train(config: ExperimentConfig):
     # Train and save model
     trainer = Trainer(
         callbacks=[checkpoint_callback, early_stopping_callback],
-        accelerator="gpu" if DEVICE.type == "cuda" else "cpu",
+        accelerator=str(settings.DEVICE),
         max_epochs=config.train.epochs,
-        devices=list(range(torch.cuda.device_count())),
-        default_root_dir=config.train.output_dir,
+        devices="auto",
+        default_root_dir=train_output_dir,
+        logger=wandb_logger,
+        log_every_n_steps=5,
+        precision="32",
     )
     trainer.fit(
         model=model,
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
     )
+
+    run_id = wandb_logger.experiment.id
+    with open(f"{train_output_dir}/wandb_id.txt", "w") as f:
+        f.write(run_id)
 
 
 if __name__ == "__main__":

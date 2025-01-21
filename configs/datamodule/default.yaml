@@ -1,4 +1,1 @@
-split: "test"
-mode: "binary"
-train_subset_size: 100
-val_subset_size: 10
+data_path: data/processed/mmlu_tiny

@@ -1,4 +1,3 @@
-import typing
 from contextlib import asynccontextmanager
 
 import fastapi
@@ -11,13 +10,18 @@ from transformers import AutoTokenizer, BertForSequenceClassification
 class Registry:
     """Models for the API."""
 
-    binary: BertForSequenceClassification
-    multiclass: BertForSequenceClassification
+    model: BertForSequenceClassification
     tokenizer: AutoTokenizer
 
-    def get(self, mode: str) -> BertForSequenceClassification:
+    def get(self) -> BertForSequenceClassification:
         """Get the client."""
-        return getattr(self, mode)
+        return self.model
+
+
+class TestRequest(BaseModel):
+    """Request for testing."""
+
+    query: str
 
 
 class PredictionRequest(BaseModel):
@@ -25,7 +29,6 @@ class PredictionRequest(BaseModel):
 
     query: str
     choices: list[str]
-    mode: typing.Literal["binary", "multiclass"] = "multiclass"
 
 
 registry = Registry()
@@ -35,14 +38,12 @@ registry = Registry()
 async def lifespan(app: fastapi.FastAPI):
     """Lifespan for the FastAPI app."""
     print("Starting up...")
-    registry.binary = BertForSequenceClassification.from_pretrained("answerdotai/ModernBERT-base", num_labels=4)
-    registry.multiclass = BertForSequenceClassification.from_pretrained("answerdotai/ModernBERT-base", num_labels=4)
+    registry.model = BertForSequenceClassification.from_pretrained("answerdotai/ModernBERT-base", num_labels=4)
     registry.tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-    registry.binary.eval()
-    registry.multiclass.eval()
+    registry.model.eval()
+    print("Model loaded successfully")
     yield
-    del registry.binary
-    del registry.multiclass
+    del registry.model
     del registry.tokenizer
     print("Shutting down...")
 
@@ -61,16 +62,18 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.post("/test")
+def test(request: TestRequest):
+    """Test endpoint."""
+    return {"query": request.query, "response": "I'm not qualified to answer that (ANY) question."}
+
+
 @app.post("/predict")
 def predict(request: PredictionRequest):
     """Predict endpoint."""
-    model = registry.get(request.mode)
+    model = registry.get()  # No arguments needed
 
-    # Combine query with each choice
-    if request.mode == "binary":
-        inputs = [f"{request.query} [SEP] {choice}" for choice in request.choices]
-    else:
-        inputs = [f"{request.query} [SEP] {choice}" for choice in request.choices]
+    inputs = [f"{request.query} [SEP] {choice}" for choice in request.choices]
 
     # Tokenize all inputs together
     encoded_inputs = registry.tokenizer(inputs, padding=True, truncation=True, return_tensors="pt")
@@ -78,14 +81,16 @@ def predict(request: PredictionRequest):
     # Run inference
     with torch.inference_mode():
         outputs = model(**encoded_inputs)
-        # Take the diagonal of the output matrix to get one probability per choice
         logits = outputs.logits.diagonal()  # This gives us one logit per choice
         probabilities = torch.nn.functional.softmax(logits, dim=0)
 
     # Convert to list and return predictions
     predictions = probabilities.tolist()
 
-    return {"probabilities": predictions, "choices": request.choices}
+    return {
+        "predictions": predictions,
+        "choices": request.choices,
+    }
 
 
 if __name__ == "__main__":

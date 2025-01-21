@@ -11,13 +11,16 @@ class ModernBERTQA(l.LightningModule):
     def __init__(
         self,
         model_name: str,
-        num_choices: int,
         optimizer_cls: type[torch.optim.Optimizer],
         optimizer_params: dict[str, typing.Any],
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_choices)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name,
+            num_labels=2,
+            problem_type="single_label_classification",
+        )
         self.optimizer_cls = optimizer_cls
         self.optimizer_params = optimizer_params
         self._validate_optimizer()
@@ -30,10 +33,9 @@ class ModernBERTQA(l.LightningModule):
             msg = f"Optimizer parameters are not compatible with optimizer class: {e}"
             raise ValueError(msg) from e
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """Forward pass of the model."""
-        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
-        return outputs.logits
+        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Training step of the model."""
@@ -52,18 +54,22 @@ class ModernBERTQA(l.LightningModule):
             attention_mask=batch["attention_mask"],
             labels=batch["labels"],
         )
-        self.log("val_loss", output.loss)
+        self.log("val_loss", output.loss.float())
         return output.loss
 
-    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> dict[str, torch.Tensor]:
         """Test step of the model."""
         output = self.model(
-            input_ids=batch["input_ids"],
-            attention_mask=batch["attention_mask"],
-            labels=batch["labels"],
+            input_ids=batch["input_ids"][0],
+            attention_mask=batch["attention_mask"][0],
+            labels=batch["labels"][0],
         )
         self.log("test_loss", output.loss)
-        return output.loss
+        return {
+            "logits": output.logits,
+            "labels": batch["labels"],
+            "loss": output.loss,
+        }
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizer for the model."""
