@@ -2,5 +2,5 @@
     remote = remote_storage
     autostage = true
 ['remote "remote_storage"']
-    url = gs://mlops-55/
+    url = gs://mlops-55-bucket/
     version_aware = true
