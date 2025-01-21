@@ -11,13 +11,16 @@ class ModernBERTQA(l.LightningModule):
     def __init__(
         self,
         model_name: str,
-        num_choices: int,
         optimizer_cls: type[torch.optim.Optimizer],
         optimizer_params: dict[str, typing.Any],
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_choices)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name,
+            num_labels=2,
+            problem_type="single_label_classification",
+        )
         self.optimizer_cls = optimizer_cls
         self.optimizer_params = optimizer_params
         self._validate_optimizer()
@@ -51,15 +54,15 @@ class ModernBERTQA(l.LightningModule):
             attention_mask=batch["attention_mask"],
             labels=batch["labels"],
         )
-        self.log("val_loss", output.loss)
+        self.log("val_loss", output.loss.float())
         return output.loss
 
-    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+    def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> dict[str, torch.Tensor]:
         """Test step of the model."""
         output = self.model(
-            input_ids=batch["input_ids"],
-            attention_mask=batch["attention_mask"],
-            labels=batch["labels"],
+            input_ids=batch["input_ids"][0],
+            attention_mask=batch["attention_mask"][0],
+            labels=batch["labels"][0],
         )
         self.log("test_loss", output.loss)
         return {

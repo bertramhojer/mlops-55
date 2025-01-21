@@ -1,5 +1,1 @@
-split: "test"
-mode: "multiclass"
-train_subset_size: 100
-val_subset_size: 10
-test_subset_size: 10
+data_path: data/processed/mmlu_tiny

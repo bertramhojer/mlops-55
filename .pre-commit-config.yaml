@@ -10,6 +10,7 @@ repos:
     -   id: check-added-large-files
     -   id: check-merge-conflict  # Check for merge conflict strings.
     -   id: check-added-large-files  # Check for large files.
+
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.8.3
   hooks:
@@ -21,8 +22,49 @@ repos:
     - id: ruff-format
       name: Ruff format
       description: "Run 'ruff format' for extremely fast Python formatting"
+
 - repo: https://github.com/astral-sh/uv-pre-commit
-  # uv version.
   rev: 0.5.8
   hooks:
     - id: uv-lock
+
+- repo: local
+  hooks:
+    - id: pytest
+      name: pytest
+      entry: uv run pytest tests
+      language: system
+      types: [python]
+      pass_filenames: false
+
+- repo: local
+  hooks:
+    - id: dvc-pre-commit
+      name: DVC pre-commit
+      entry: uv run dvc
+      language: system
+      args: [git-hook, pre-commit]
+      stages:
+        - pre-commit
+      verbose: true
+      require_serial: true
+
+    - id: dvc-pre-push
+      name: DVC pre-push
+      entry: uv run dvc
+      language: system
+      args: [git-hook, pre-push]
+      stages:
+        - pre-push
+      require_serial: true
+
+    - id: dvc-post-checkout
+      name: DVC post-checkout
+      entry: uv run dvc
+      language: system
+      args: [git-hook, post-checkout]
+      minimum_pre_commit_version: 2.2.0
+      stages:
+        - post-checkout
+      require_serial: true
+      always_run: true

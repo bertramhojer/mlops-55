@@ -1,0 +1,74 @@
+outs:
+- hash: md5
+  path: mmlu
+  files:
+  - relpath: dataset_dict.json
+    md5: d891fc9df4ce897bcacc398f78aea2ff
+    size: 43
+    cloud:
+      remote_storage:
+        etag: 08d7a8e0b1b7848b031001
+        version_id: '1737380679128151'
+  - relpath: test/data-00000-of-00001.arrow
+    md5: 0764682433c2ca3b7fdb37e7f968c820
+    size: 6974504
+    cloud:
+      remote_storage:
+        etag: 08adc998b2b7848b031001
+        version_id: '1737380680049837'
+  - relpath: test/dataset_info.json
+    md5: 7d6e012322f8339cfb9eadc0c68f7756
+    size: 2024
+    cloud:
+      remote_storage:
+        etag: 08de8febb1b7848b031001
+        version_id: '1737380679305182'
+  - relpath: test/state.json
+    md5: a863d795dcb9373105eb51216518d1bb
+    size: 249
+    cloud:
+      remote_storage:
+        etag: 08e3cef3b1b7848b031001
+        version_id: '1737380679444323'
+  - relpath: train/data-00000-of-00001.arrow
+    md5: d1259496efb6369bb8486cd11f6e68c3
+    size: 179600
+    cloud:
+      remote_storage:
+        etag: 08c089f2b1b7848b031001
+        version_id: '1737380679419072'
+  - relpath: train/dataset_info.json
+    md5: 9225fff0161e1bfe8517549159e5b06e
+    size: 1133
+    cloud:
+      remote_storage:
+        etag: 0892dcebb1b7848b031001
+        version_id: '1737380679314962'
+  - relpath: train/state.json
+    md5: b8e0023e2bbae8e1aaf16bcae81a3139
+    size: 250
+    cloud:
+      remote_storage:
+        etag: 08b8d7f2b1b7848b031001
+        version_id: '1737380679429048'
+  - relpath: validation/data-00000-of-00001.arrow
+    md5: 2cbb02c822a8cd866e9c67a18990366a
+    size: 764992
+    cloud:
+      remote_storage:
+        etag: 08dc84f7b1b7848b031001
+        version_id: '1737380679500380'
+  - relpath: validation/dataset_info.json
+    md5: 7d6e012322f8339cfb9eadc0c68f7756
+    size: 2024
+    cloud:
+      remote_storage:
+        etag: 08a1caf3b1b7848b031001
+        version_id: '1737380679443745'
+  - relpath: validation/state.json
+    md5: 5f491f85f02efc5e75969e63f8c14311
+    size: 255
+    cloud:
+      remote_storage:
+        etag: 08a9e1eab1b7848b031001
+        version_id: '1737380679299241'
