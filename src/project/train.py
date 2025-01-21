@@ -65,7 +65,7 @@ def run_train(config: ExperimentConfig):
             "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
         }
 
-    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    dataset, _ = load_from_dvc(config.datamodule.data_path)
     train_dataset: datasets.Dataset = dataset["train"]
     val_dataset: datasets.Dataset = dataset["validation"]
     train_loader = torch.utils.data.DataLoader(
