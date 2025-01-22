@@ -60,9 +60,9 @@ class ModernBERTQA(l.LightningModule):
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> dict[str, torch.Tensor]:
         """Test step of the model."""
         output = self.model(
-            input_ids=batch["input_ids"][0],
-            attention_mask=batch["attention_mask"][0],
-            labels=batch["labels"][0],
+            input_ids=batch["input_ids"],
+            attention_mask=batch["attention_mask"],
+            labels=batch["labels"],
         )
         self.log("test/loss", output.loss)
         return {
