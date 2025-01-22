@@ -111,8 +111,8 @@ def run_test(config: TestConfig):
         {"Metric": ["F1", "Accuracy", "Test Loss"], "Value": [f1, accuracy, results[0]["test_loss"]]}
     )
 
-    wandb_logger.log_table("Evaluation Results", dataframe=results_table)
-    wandb_logger.log_table("Label Biases", dataframe=label_biases_table)
+    wandb_logger.log_table("test/metrics", dataframe=results_table)
+    wandb_logger.log_table("test/label_biases", dataframe=label_biases_table)
 
 
 if __name__ == "__main__":
