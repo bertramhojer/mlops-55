@@ -23,7 +23,11 @@ def subset_dataset(dataset: datasets.Dataset, subset_size: int, random_seed: int
 
 
 def preprocess_binary(
-    example: dict[str, Any], tokenizer: AutoTokenizer, max_length: int, is_auxiliary_train: bool = False
+    example: dict[str, Any],
+    tokenizer: AutoTokenizer,
+    max_length: int,
+    is_auxiliary_train: bool = False,
+    limit_examples: int | None = None,
 ) -> list[dict[str, torch.Tensor]]:
     """Convert a single MMLU example into multiple binary classification examples."""
     # Handle nested structure for auxiliary_train
@@ -47,6 +51,8 @@ def preprocess_binary(
                 "label": torch.Tensor([float(idx == correct_answer)]),
             }
         )
+        if limit_examples is not None and idx == limit_examples:
+            break
 
     return processed_examples
 
@@ -57,7 +63,7 @@ def preprocess_dataset(
     """Preprocess entire MMLU dataset."""
 
     def process_binary(example: dict[str, Any]) -> dict[str, torch.Tensor]:
-        processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train)
+        processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train, limit_examples=2)
         return {
             "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
             "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
