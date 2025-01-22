@@ -1,5 +1,7 @@
 import json
 import pathlib
+import pydantic
+import pydantic_settings
 from collections import Counter
 from typing import TYPE_CHECKING
 
@@ -14,7 +16,7 @@ from loguru import logger
 from omegaconf import DictConfig
 from sklearn.metrics import accuracy_score, f1_score
 
-from project.configs import TestConfig
+from project.configs import TestConfig, DatasetConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
 from project.tools import hydra_to_pydantic, pprint_config
@@ -38,11 +40,20 @@ class StoreTestPreds(Callback):
         self.test_logits.extend(batch["logits"].argmax(dim=-1).cpu().numpy())
         self.test_labels.extend(batch["labels"].cpu().numpy())
 
+class EvaluateConfig(pydantic_settings.BaseSettings):
+    """Configuration for running evaluations."""
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="test_config")
+    project_name: str = pydantic.Field(..., description="Name of project")
+    datamodule: DatasetConfig = pydantic.Field(..., description="Dataset configuration")
+    test: TestConfig = pydantic.Field(..., description="Training configuration")
+
+    model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
+
+
+@hydra.main(version_base=None, config_path=str(settings.PROJECT_DIR / "configs"), config_name="test_config")
 def run(cfg: DictConfig) -> None:
-    """Run training loop."""
-    config: TestConfig = hydra_to_pydantic(cfg, TestConfig)
+    """Run evaluate."""
+    config: EvaluateConfig = hydra_to_pydantic(cfg, EvaluateConfig)
     pprint_config(cfg)
     run_test(config)
 
