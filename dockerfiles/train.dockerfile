@@ -25,18 +25,8 @@ COPY configs ./configs
 COPY src/project/ ./src/project/
 
 # Install dependencies conditionally based on GPU availability
-RUN if lspci | grep -i nvidia > /dev/null 2>&1; then \
-        echo "GPU detected, installing GPU dependencies"; \
-        uv sync --frozen --extra train --extra gpu; \
-    else \
-        echo "No GPU detected, installing CPU-only dependencies"; \
-        uv sync --frozen --extra train; \
-    fi
-
-# Set default values for environment variables
-ARG OPTIMIZER=adam
-ARG DATAMODULE=default
-ARG TRAIN=default
+RUN uv sync --frozen --extra train
 
 # Set the entrypoint to the data processing script
-CMD ["sh", "-c", "uv run train +optimizer=${OPTIMIZER} +datamodule=${DATAMODULE} +train=${TRAIN}"]
+ENTRYPOINT ["uv", "run"]
+CMD ["train", "experiment=exp1"]

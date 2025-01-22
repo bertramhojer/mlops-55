@@ -54,7 +54,7 @@ def run_train(config: ExperimentConfig):
     """
     train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
 
-    wandb_logger = WandbLogger(log_model=False, save_dir=train_output_dir)
+    wandb_logger = WandbLogger(project=settings.WANDB_PROEJECT, log_model=True, save_dir=train_output_dir)
 
     # Load processed datasets
     logger.info(f"Loading datasets from {config.datamodule.file_name}...")
@@ -89,7 +89,12 @@ def run_train(config: ExperimentConfig):
         optimizer_params=config.optimizer.optimizer_params,
     )
     checkpoint_callback = ModelCheckpoint(
-        dirpath=train_output_dir, monitor=config.train.monitor, mode=config.train.mode
+        dirpath=train_output_dir,
+        monitor=config.train.monitor,
+        mode=config.train.mode,
+        filename="model-{epoch:02d}-{" + config.train.monitor + ":.2f}",
+        save_top_k=1,  # Saves the best model only
+        auto_insert_metric_name=False,
     )
     early_stopping_callback = EarlyStopping(
         monitor=config.train.monitor, patience=config.train.patience, verbose=True, mode=config.train.mode

@@ -8,6 +8,8 @@ import typer
 from dvc.repo import Repo
 from transformers import AutoTokenizer
 
+from project.settings import settings
+
 
 def subset_dataset(dataset: datasets.Dataset, subset_size: int, random_seed: int) -> datasets.Dataset:
     """Subset the dataset to a random sample of size `subset_size`."""
@@ -149,6 +151,13 @@ def load_from_dvc(file: str, remote: str = "remote_storage") -> tuple[datasets.D
     # Create paths
     processed_path = Path("data/processed") / file
     raw_path = Path("data/raw") / file
+
+    if settings.GCP_JOB:
+        # If GCP job running with Vertex AI, load datasets directly from GCS
+        remote_bucket = f"/gcs/{settings.GCP_BUCKET}"
+        dset_proc = datasets.load_from_disk(remote_bucket / processed_path)
+        dset_raw = datasets.load_from_disk(remote_bucket / raw_path)
+        return dset_proc, dset_raw
 
     if not processed_path.exists() or not raw_path.exists():
         # init dvc repo

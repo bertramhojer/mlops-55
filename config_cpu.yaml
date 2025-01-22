@@ -1,0 +1,14 @@
+# config_cpu.yaml
+workerPoolSpecs:
+    machineSpec:
+        machineType: n1-highmem-2
+    replicaCount: 1
+    containerSpec:
+        imageUri: europe-west1-docker.pkg.dev/flash-rock-447808-n2/mlops55/trainer-image:latest
+        env:
+        - name: WANDB_API_KEY
+          value: ${WANDB_API_KEY}
+        - name: GCP_PROJECT_ID
+          value: ${GCP_PROJECT_ID}
+        - name: GCP_JOB
+          value: "true"
