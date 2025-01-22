@@ -60,6 +60,8 @@ def run_test(config: TestConfig):
     logger.info("Loading datasets...")
     dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
     test_dataset: datasets.Dataset = dataset["test"]
+    if config.n_test_samples:
+        test_dataset = test_dataset.shuffle(seed=config.seed).select(range(config.n_test_samples))
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False)
 
     # Load pretrained model from models and evaluate
