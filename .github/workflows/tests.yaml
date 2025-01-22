@@ -36,14 +36,10 @@ jobs:
       - name: Generate coverage report
         run: uv run coverage report -m >> coverage_report.txt
 
-      - name: Setup cml
-        uses: iterative/setup-cml@v2
-
-      - name: Comment on PR
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cml comment create coverage_report.txt --watermark-title="Coverage report" # (1)!
-
-
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: 'coverage-report.txt'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
