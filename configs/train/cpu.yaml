@@ -5,6 +5,6 @@ epochs: 10
 batch_size: 32
 eval_batch_size: 8
 output_dir: "/gcs/models/"
-monitor: "val_loss"
+monitor: "val/loss"
 mode: "min"
 patience: 5

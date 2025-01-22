@@ -8,5 +8,5 @@ output_dir: "models/exp1"
 monitor: "val/loss"
 mode: "min"
 patience: 5
-n_train_samples: 8000
-n_val_samples: 2000
+n_train_samples: 800
+n_val_samples: 200
