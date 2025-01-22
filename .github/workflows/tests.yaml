@@ -34,15 +34,13 @@ jobs:
         run: uv run coverage run -m pytest tests/
 
       - name: Generate coverage report
+        run: uv run coverage report -m >> coverage_report.md
+
+      - name: Comment on PR
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo '### Code Coverage Report' > coverage_report.md
-          echo '```' >> coverage_report.md
-          uv run coverage report -m >> coverage_report.md
-          echo '```' >> coverage_report.md
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          path: coverage_report.md
+          cml comment create coverage_report.md.md --watermark-title="Coverage report" # (1)!
 
 
 
