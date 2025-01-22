@@ -28,10 +28,21 @@ jobs:
           enable-cache: true
 
       - name: Install the project
-        run: uv sync
+        run: uv sync --train
 
       - name: Run tests
-        run: uv run pytest tests
+        run: uv run coverage run -m pytest tests/
+
+      - name: Generate coverage report
+        run: |
+          echo '### Code Coverage Report' > coverage_report.md
+          echo '```' >> coverage_report.md
+          uv run coverage report -m >> coverage_report.md
+          echo '```' >> coverage_report.md
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
 
 
 
