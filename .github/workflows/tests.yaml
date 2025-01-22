@@ -34,7 +34,7 @@ jobs:
         run: uv run coverage run --source=src/ -m pytest
 
       - name: Generate coverage report
-        run: uv run coverage report -m >> coverage_report.md
+        run: uv run coverage report -m >> coverage_report.txt
 
       - name: Setup cml
         uses: iterative/setup-cml@v2
@@ -43,7 +43,7 @@ jobs:
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cml comment create coverage_report.md --watermark-title="Coverage report" # (1)!
+          cml comment create coverage_report.txt --watermark-title="Coverage report" # (1)!
 
 
 
