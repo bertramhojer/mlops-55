@@ -1,24 +1,31 @@
 FROM python:3.12-slim AS base
 
+# Copy UV from the first stage
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc git && \
+    apt install --no-install-recommends -y build-essential gcc git supervisor && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /app
 WORKDIR /app
 
-# Copy only the necessary files
-COPY pyproject.toml /app/pyproject.toml
-COPY src/project/frontend.py /app/frontend.py
+# Copy the entire project first
+COPY . .
 
-# Create and activate virtual environment
-ENV UV_PROJECT_ENVIRONMENT=/app/.venv
-RUN uv venv
-ENV PATH="/app/.venv/bin:$PATH"
+# Install dependencies and add the virtual environment's bin to PATH
+RUN uv sync --group frontend --group api && \
+    echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc && \
+    echo 'PATH=/app/.venv/bin:$PATH' >> /etc/profile
 
-# Install only frontend dependencies
-RUN uv sync --groups=frontend
+# Set PATH for the current build stage
+ENV PATH=/app/.venv/bin:$PATH
 
-EXPOSE $PORT
+# Copy the supervisord configuration file
+COPY dockerfiles/supervisord.conf /app/supervisord.conf
 
-ENTRYPOINT ["streamlit", "run", "frontend.py", "--server.port", "$PORT", "--server.address=0.0.0.0"]
+# Expose the ports for FastAPI and Streamlit
+EXPOSE 8000 8501
+
+# Command to run supervisord
+CMD ["supervisord", "-c", "/app/supervisord.conf"]

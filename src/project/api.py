@@ -38,9 +38,7 @@ registry = Registry()
 async def lifespan(app: fastapi.FastAPI):
     """Lifespan for the FastAPI app."""
     print("Starting up...")
-    registry.model = BertForSequenceClassification.from_pretrained(
-        "answerdotai/ModernBERT-base", num_labels=1, problem_type="single_label_classification"
-    )
+    registry.model = BertForSequenceClassification.from_pretrained("answerdotai/ModernBERT-base", num_labels=4)
     registry.tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
     registry.model.eval()
     print("Model loaded successfully")
@@ -90,10 +88,7 @@ def predict(request: PredictionRequest):
     predictions = probabilities.tolist()
 
     return {
-        "inputs": inputs,
-        "outputs": outputs,
-        "logits": logits,
-        "probabilities": predictions,
+        "predictions": predictions,
         "choices": request.choices,
     }
 
