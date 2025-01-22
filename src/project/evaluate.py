@@ -1,5 +1,7 @@
 import json
 import pathlib
+import pydantic
+import pydantic_settings
 from collections import Counter
 from typing import TYPE_CHECKING
 
@@ -14,9 +16,11 @@ from loguru import logger
 from omegaconf import DictConfig
 from sklearn.metrics import accuracy_score, f1_score
 
-from project.configs import TestConfig
+from project.collate import collate_fn
+from project.configs import TestConfig, DatasetConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
+from project.settings import settings
 from project.tools import hydra_to_pydantic, pprint_config
 
 if TYPE_CHECKING:
@@ -38,11 +42,20 @@ class StoreTestPreds(Callback):
         self.test_logits.extend(batch["logits"].argmax(dim=-1).cpu().numpy())
         self.test_labels.extend(batch["labels"].cpu().numpy())
 
+class EvaluateConfig(pydantic_settings.BaseSettings):
+    """Configuration for running evaluations."""
 
-@hydra.main(version_base=None, config_path=str(PROJECT_ROOT / "configs"), config_name="test_config")
+    project_name: str = pydantic.Field(..., description="Name of project")
+    datamodule: DatasetConfig = pydantic.Field(..., description="Dataset configuration")
+    test: TestConfig = pydantic.Field(..., description="Training configuration")
+
+    model_config = pydantic_settings.SettingsConfigDict(cli_parse_args=True, frozen=True, arbitrary_types_allowed=True)
+
+
+@hydra.main(version_base=None, config_path=str(settings.PROJECT_DIR / "configs"), config_name="test_config")
 def run(cfg: DictConfig) -> None:
-    """Run training loop."""
-    config: TestConfig = hydra_to_pydantic(cfg, TestConfig)
+    """Run evaluate."""
+    config: EvaluateConfig = hydra_to_pydantic(cfg, EvaluateConfig)
     pprint_config(cfg)
     run_test(config)
 
@@ -54,21 +67,23 @@ if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":
     torch._dynamo.config.suppress_errors = True  # type: ignore[attr-defined]  # noqa: SLF001
 
 
-def run_test(config: TestConfig):
-    """Train model, saves model to output_dir."""
+def run_test(config: EvaluateConfig):
+    """Evaluate model on test set."""
     # Load processed datasets
     logger.info("Loading datasets...")
-    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    dataset, _ = load_from_dvc(config.datamodule.data_path)
     test_dataset: datasets.Dataset = dataset["test"]
-    if config.n_test_samples:
-        test_dataset = test_dataset.shuffle(seed=config.seed).select(range(config.n_test_samples))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False)
+    if config.test.n_test_samples:
+        test_dataset = test_dataset.shuffle(seed=config.test.seed).select(range(config.test.n_test_samples))
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.test.batch_size, shuffle=False, collate_fn=collate_fn)
 
+    with open(f"{config.test.checkpoint_dir}/metadata.json") as f:
+        metadata_dict = json.load(f)
+        wandb_id = metadata_dict["wandb_run_id"]
+        best_model_filename = metadata_dict["best_model_file"]
+    
     # Load pretrained model from models and evaluate
-    checkpoint_file = next(f for f in pathlib.Path(config.test.checkpoint_dir).iterdir() if f.suffix == ".ckpt").name
-    model = ModernBERTQA.load_from_checkpoint(pathlib.Path(config.test.checkpoint_dir) / checkpoint_file)
-    with open(f"{config.test.checkpoint_dir}/wandb_id.txt") as f:
-        wandb_id = f.read()
+    model = ModernBERTQA.load_from_checkpoint(best_model_filename)
 
     wandb_logger = WandbLogger(log_model=False, save_dir=config.test.checkpoint_dir, id=wandb_id)
 
@@ -108,7 +123,7 @@ def run_test(config: TestConfig):
 
     label_biases_table = pd.DataFrame(label_biases.items(), columns=["Label", "Bias"])
     results_table = pd.DataFrame(
-        {"Metric": ["F1", "Accuracy", "Test Loss"], "Value": [f1, accuracy, results[0]["test_loss"]]}
+        {"Metric": ["F1", "Accuracy", "Test Loss"], "Value": [f1, accuracy, results[0]["test/loss"]]}
     )
 
     wandb_logger.log_table("test/metrics", dataframe=results_table)
