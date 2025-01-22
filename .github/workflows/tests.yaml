@@ -36,6 +36,9 @@ jobs:
       - name: Generate coverage report
         run: uv run coverage report -m >> coverage_report.md
 
+      - name: Setup cml
+        uses: iterative/setup-cml@v2
+
       - name: Comment on PR
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
