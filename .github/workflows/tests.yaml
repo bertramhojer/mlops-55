@@ -34,12 +34,12 @@ jobs:
         run: uv run coverage run --source=src/ -m pytest
 
       - name: Generate coverage report
-        run: uv run coverage report -m >> coverage_report.txt
+        run: uv run coverage report -m --format="markdown" >> cov.md
 
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body-path: 'coverage_report.txt'
+          body-path: 'cov.md'
           token: ${{ secrets.GITHUB_TOKEN }}
 
