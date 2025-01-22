@@ -34,12 +34,24 @@ jobs:
         run: uv run coverage run --source=src/ -m pytest
 
       - name: Generate coverage report
-        run: uv run coverage report -m --format="markdown" >> cov.md
+        run: |
+          echo '## Code Coverage Report' >> cov.md
+          uv run coverage report -m --format="markdown" >> cov.md
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Coverage'
 
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body-path: 'cov.md'
           token: ${{ secrets.GITHUB_TOKEN }}
+          edit_mode: replace
 
