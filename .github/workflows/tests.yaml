@@ -34,7 +34,7 @@ jobs:
         run: uv run coverage run -m pytest tests/
 
       - name: Generate coverage report
-        run: uv run coverage report -m >> coverage_report.md
+        run: uv run coverage report -m
 
       - name: Comment on PR
         env:
