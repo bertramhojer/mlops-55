@@ -3,3 +3,4 @@ checkpoint_dir: "models/exp1/"
 output_dir: "models/exp1/"
 device: "cpu"
 batch_size: 32
+n_test_samples: 2000
