@@ -63,9 +63,9 @@ def run_train(config: ExperimentConfig):
     val_dataset: datasets.Dataset = dataset["validation"]
 
     if config.train.n_train_samples:
-        train_dataset = train_dataset.shuffle(seed=config.train.seed).select(range(config.train.n_train_samples))
+        train_dataset = train_dataset.select(range(config.train.n_train_samples))
     if config.train.n_val_samples:
-        val_dataset = val_dataset.shuffle(seed=config.train.seed).select(range(config.train.n_val_samples))
+        val_dataset = val_dataset.select(range(config.train.n_val_samples))
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=config.train.batch_size, shuffle=True, collate_fn=collate_fn
