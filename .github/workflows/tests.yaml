@@ -40,6 +40,6 @@ jobs:
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body-path: 'coverage-report.txt'
+          body-path: 'coverage_report.txt'
           token: ${{ secrets.GITHUB_TOKEN }}
 
