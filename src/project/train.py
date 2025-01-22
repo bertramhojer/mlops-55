@@ -1,3 +1,4 @@
+import json
 import typing
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,7 @@ from loguru import logger
 from omegaconf import DictConfig
 
 import hydra
+from project.collate import collate_fn
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
@@ -48,27 +50,25 @@ if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # ty
 
 
 def run_train(config: ExperimentConfig):
-    """Train model, saves model to output_dir.
-
-    TODO: fix binary classification.
-    """
+    """Train model, saves model to output_dir."""
     train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
 
-    wandb_logger = WandbLogger(project=settings.WANDB_PROEJECT, log_model=True, save_dir=train_output_dir)
+    wandb_logger = WandbLogger(
+        project=settings.WANDB_PROJECT, entity=settings.WANDB_ENTITY, log_model=True, save_dir=train_output_dir
+    )
 
     # Load processed datasets
     logger.info(f"Loading datasets from {config.datamodule.file_name}...")
 
-    def collate_fn(batch):
-        return {
-            "input_ids": torch.stack([torch.tensor(item["input_ids"]) for item in batch]).long(),
-            "attention_mask": torch.stack([torch.tensor(item["attention_mask"]) for item in batch]).long(),
-            "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
-        }
+    dataset, _ = load_from_dvc(config.datamodule.file_name)
+    train_dataset: datasets.Dataset = dataset["train"]
+    val_dataset: datasets.Dataset = dataset["validation"]
 
-    proc_dataset, _ = load_from_dvc(config.datamodule.file_name)
-    train_dataset: datasets.Dataset = proc_dataset["train"]
-    val_dataset: datasets.Dataset = proc_dataset["validation"]
+    if config.train.n_train_samples:
+        train_dataset = train_dataset.select(range(config.train.n_train_samples))
+    if config.train.n_val_samples:
+        val_dataset = val_dataset.select(range(config.train.n_val_samples))
+
     train_loader = torch.utils.data.DataLoader(
         typing.cast(torch.utils.data.Dataset, train_dataset),
         batch_size=config.train.batch_size,
@@ -117,9 +117,9 @@ def run_train(config: ExperimentConfig):
         val_dataloaders=val_loader,
     )
 
-    run_id = wandb_logger.experiment.id
-    with open(f"{train_output_dir}/wandb_id.txt", "w") as f:
-        f.write(run_id)
+    with open(f"{train_output_dir}/metadata.json", "w") as f:
+        metadata = {"best_model_file": checkpoint_callback.best_model_path, "wandb_run_id": wandb_logger.experiment.id}
+        json.dump(metadata, f)
 
 
 if __name__ == "__main__":

@@ -45,8 +45,9 @@ jobs:
 
     - name: Check data statistics & generate report
       run: |
-        uv run stats > data_statistics.md
-        echo '![](./labels_count.png "Labels Distribution")' >> data_statistics.md
+          python src/project/visualize.py > data_overview.md
+          echo '![](./train_label_distribution.png "Train label distribution")' >> data_overview.md
+          echo '![](./test_label_distribution.png "Test label distribution")' >> data_overview.md
 
     - name: Setup cml
       uses: iterative/setup-cml@v2

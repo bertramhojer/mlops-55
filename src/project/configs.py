@@ -30,6 +30,8 @@ class TrainConfig(pydantic.BaseModel):
     monitor: str = pydantic.Field(..., description="Metric to monitor for early stopping")
     mode: str = pydantic.Field(..., description="Mode for monitoring")
     patience: int = pydantic.Field(..., description="Patience for early stopping")
+    n_train_samples: int | None = pydantic.Field(None, description="Number of training samples")
+    n_val_samples: int | None = pydantic.Field(None, description="Number of validation samples")
 
     @pydantic.field_validator("output_dir", mode="before")
     @classmethod
@@ -46,3 +48,4 @@ class TestConfig(pydantic.BaseModel):
     batch_size: int = pydantic.Field(..., description="Batch size for testing")
     seed: int = pydantic.Field(..., description="Random seed for reproducibility")
     device: str = pydantic.Field(..., description="Device to use for testing")
+    n_test_samples: int | None = pydantic.Field(None, description="Number of test samples")

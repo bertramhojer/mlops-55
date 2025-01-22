@@ -1,7 +1,12 @@
 # Import the W&B Python Library and log into W&B
 import wandb
+from dotenv import load_dotenv
 
 from project.train import run
+
+# Initialize wandb logger
+load_dotenv()
+
 
 # 2: Define the search space
 sweep_configuration = {
