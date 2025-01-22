@@ -5,6 +5,10 @@ manual_test/
 # other local dev info
 .vscode/
 
+# wandb
+wandb/
+artifacts/
+
 # Mac OS-specific storage files
 .DS_Store
 
