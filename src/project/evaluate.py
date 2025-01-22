@@ -16,6 +16,7 @@ from loguru import logger
 from omegaconf import DictConfig
 from sklearn.metrics import accuracy_score, f1_score
 
+from project.collate import collate_fn
 from project.configs import TestConfig, DatasetConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
@@ -74,7 +75,7 @@ def run_test(config: TestConfig):
     if config.test.n_test_samples:
         test_samples_divisible = config.test.n_test_samples + 4 - (config.test.n_test_samples % 4)
         test_dataset = test_dataset.select(range(test_samples_divisible))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False, collate_fn=collate_fn)
 
     # Load pretrained model from models and evaluate
     checkpoint_file = next(f for f in pathlib.Path(config.test.checkpoint_dir).iterdir() if f.suffix == ".ckpt").name

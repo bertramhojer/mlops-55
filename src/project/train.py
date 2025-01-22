@@ -10,6 +10,7 @@ from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
 
+from project.collate import collate_fn
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
@@ -57,13 +58,6 @@ def run_train(config: ExperimentConfig):
 
     # Load processed datasets
     logger.info(f"Loading datasets from {config.datamodule.data_path}...")
-
-    def collate_fn(batch):
-        return {
-            "input_ids": torch.stack([torch.tensor(item["input_ids"]) for item in batch]).long(),
-            "attention_mask": torch.stack([torch.tensor(item["attention_mask"]) for item in batch]).long(),
-            "labels": torch.stack([torch.tensor(item["labels"]) for item in batch]).long(),
-        }
 
     dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
     train_dataset: datasets.Dataset = dataset["train"]
