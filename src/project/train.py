@@ -68,6 +68,10 @@ def run_train(config: ExperimentConfig):
     dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
     train_dataset: datasets.Dataset = dataset["train"]
     val_dataset: datasets.Dataset = dataset["validation"]
+    if config.train.n_train_samples:
+        train_dataset = train_dataset.select(range(config.train.n_train_samples))
+    if config.train.n_val_samples:
+        val_dataset = val_dataset.select(range(config.train.n_val_samples))
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=config.train.batch_size, shuffle=True, collate_fn=collate_fn
     )  # type: ignore  # noqa: PGH003

@@ -58,8 +58,11 @@ def run_test(config: TestConfig):
     """Train model, saves model to output_dir."""
     # Load processed datasets
     logger.info("Loading datasets...")
-    dataset: datasets.DatasetDict = load_from_dvc(config.datamodule.data_path)
+    dataset, _ = load_from_dvc(config.datamodule.data_path)
     test_dataset: datasets.Dataset = dataset["test"]
+    if config.test.n_test_samples:
+        test_samples_divisible = config.test.n_test_samples + 4 - (config.test.n_test_samples % 4)
+        test_dataset = test_dataset.select(range(test_samples_divisible))
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.train.batch_size, shuffle=False)
 
     # Load pretrained model from models and evaluate
