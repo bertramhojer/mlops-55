@@ -129,7 +129,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
-s154097, s250393, s------ (Rachael DeVries)
+s154097, s250393, s251116
 
 ### Question 3
 > **A requirement to the project is that you include a third-party package not covered in the course. What framework**
@@ -143,7 +143,11 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 3 fill here ---
+We chose to use `uv` for package dependency management in our project. We wanted to compare it with `poetry`, a dependency management tool with which we were familiar. We found several advantages with `uv`, including significant speedups during dependency resolution and package installation, as it is built in Rust. This efficiency was particularly beneficial for maintaining rapid development cycles.
+
+Another notable advantage of `uv` was its ability to handle isolated builds effectively. This was especially helpful for installing complex packages like `torch` plugins, such as `flash-attention`, which often require intricate build processes. With `uv`, we avoided common issues with `poetry` and saved valuable time during dependency installation. These features made `uv` a crucial tool in completing our project.
+
+
 
 ## Coding environment
 
@@ -163,7 +167,11 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 4 fill here ---
+We used `uv` to manage dependencies in our project. The list of dependencies was specified in a `uv` configuration file, which ensures deterministic builds by pinning exact versions of all packages. This made sharing and replicating our development environment straightforward for team members.
+
+To simplify setup further, we included a development container (`dev container`) in our project. The dev container is preconfigured to automatically set up a development environment with `uv` installed and ready to use. A new team member would need to open the project in a compatible IDE, such as Visual Studio Code, which would detect the dev container configuration and spin up the environment.
+
+This approach ensures consistency, avoids compatibility issues, and provides a seamless onboarding experience for new contributors.
 
 ### Question 5
 
@@ -179,7 +187,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 5 fill here ---
+We initialized the repository using the MLOps cookie-cutter template developed by Nicki. As described previously, we decided to use uv instead of requirement files. We have added a .dvc file with a config file for data versioning with pointers to the GCP bucket that holds our preprocessed dataset. We have also removed the tasks.py and instead specify project scripts in the pyproject.toml which is compatible with uv. Using uv ensures the environment is always correctly set up when running defined scripts.
 
 ### Question 6
 
@@ -194,7 +202,8 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 6 fill here ---
+We used Ruff for linting to ensure good-quality code and consistent formatting. Our pre-commit checks were set up not to allow commits if the files were not formatted correctly. The Ruff linter automatically enforces the use of docstrings for proper function documentation. We generally used type-hints throughout the code and have used Pydantic for specific modules, improving the readability of the code. This is important for larger projects with multiple collaborators where many components are built by separate developers before being combined in the final application.
+We additionally implemented pre-commit checks to ensure that new code passed checks before being merged into the protected main branch. This is important as we could otherwise encounter compatibility issues between different components (given that the tests are correctly written).
 
 ## Version control
 
@@ -213,7 +222,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 7 fill here ---
+We used ‘pytest’ for all testing implemented in our project. In total, we have implemented __ tests. We primarily test the data processing to ensure the correct data types are used. We initially ran into various issues with the data formatting. Still, the tests now ensure proper formatting and that the dataset (when created and loaded using DVC) is in the expected format. We also test our model training and inference and simple API tests.
 
 ### Question 8
 
@@ -228,7 +237,9 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 8 fill here ---
+Whenever a PR is/was made to the main branch, we generate a code coverage report. The total code coverage at the latest PR to main is __. 
+
+We do not have 100% coverage of our code, but our tests cover the most critical parts of our project, such as data processing, model training, and inference. Even if one had developed tests such that one achieved code coverage of 100%, this still would not ensure any undesired bugs or implementation errors in the code.
 
 ### Question 9
 
@@ -243,7 +254,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 9 fill here ---
+We made use of branches and PRs in our projects. Our project was structured with a protected ‘main’ branch and an unprotected ‘dev’ branch from which we generated ‘feature’ branches whenever a new feature had to be developed. Each group member would then create a feature branch for features such as data preprocessing or model training and merge with the ‘dev’ branch. The ‘dev’ branch was occasionally merged with the ‘main’ branch. The ‘main’ branch protection required at least one reviewer before committing the code. We also implemented a GitHub workflow, ensuring that committed code passed all defined tests and printing dataset statistics if a new dataset was created.
 
 ### Question 10
 
@@ -258,7 +269,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 10 fill here ---
+We used DVC in the data preprocessing component of our project, although we are working with a static dataset. It was primarily implemented, as the functionality would be good if one continued developing the application with more continuous machine learning in mind. As our project concerned fine-tuning a ModernBERT model on the MMLU dataset and creating a simple binary classifier based on that dataset, data-versioning is not a critical feature (as the dataset is static). If one were to continuously train the model with more (and newer) data-versioning, it would become a critical feature.
 
 ### Question 11
 
@@ -275,7 +286,9 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 11 fill here ---
+Our continuous integration (CI) setup is organized into two main GitHub Actions workflows: one for data validation and another for running tests. The data validation workflow, defined in .github/workflows/cml_data.yaml, is triggered on pull requests to the main and dev branches when changes are made to .dvc files. This workflow includes steps for checking out the code, installing the necessary dependencies using uv, authenticating with Google Cloud Platform, pulling data with DVC, and generating data statistics reports. It also comments on the pull request with the generated report.
+The testing workflow in .github/workflows/tests.yaml is triggered on pushes and pull requests to the main branch. It employs a matrix strategy to test across multiple operating systems (Ubuntu, Windows, and macOS) and uses Python 3.12. This workflow installs the project dependencies and runs unit tests using pytest.
+Both workflows utilize caching to speed up dependency installation, enhancing efficiency. This CI setup ensures our code is continuously validated and tested across different environments, maintaining high code quality.
 
 ## Running code and tracking experiments
 
@@ -294,7 +307,15 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 12 fill here ---
+We configured our experiments using uv, Hydra, and Typer. Hydra allows us to manage complex configurations easily, enabling us to define parameters in YAML files. For example, we can create the dataset with specific parameters in the following manner:
+```python
+uv run python src/project/data.py create-dataset –subset-size 1000 –filepath mmlu
+```
+Or, we can run an experiment with specific parameters using a command like:
+```python
+uv run my_experiment.py --config-path=configs --config-name=experiment_config.yaml
+```
+Typer creates a user-friendly command-line interface in this setup, allowing us to pass parameters directly. This combination provides flexibility and clarity in managing our experiment configurations.
 
 ### Question 13
 
@@ -309,7 +330,11 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 13 fill here ---
+To ensure the reproducibility of our experiments, we utilize configuration files managed by Hydra. Whenever an experiment is run, the configuration parameters, including hyperparameters and dataset paths, are stored in a structured YAML format. This allows us to track and modify settings for each experiment easily. Additionally, we log all relevant metadata, such as the version of the code, the environment, and the specific configurations used, ensuring that no information is lost. To reproduce an experiment, one would simply need to run the command:
+```python
+uv run my_experiment.py --config-path=configs --config-name=experiment_config.yaml
+```
+This command retrieves the exact configuration used in the original experiment, allowing for consistent results. Furthermore, we leverage DVC (Data Version Control) to manage datasets and model versions, ensuring that the data used in experiments is also versioned and accessible. This comprehensive approach guarantees that our experiments can be reliably reproduced, facilitating collaboration and validation of results.
 
 ### Question 14
 
@@ -356,7 +381,8 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 16 fill here ---
+All group members employed the standard VS Code debugger (or Cursor, a fork of VS Code) for debugging code. We did not do any profiling during development but did a single profiling run of our code at the end. This profiling run showed —-
+Profiling run summary
 
 ## Working in the cloud
 
@@ -373,7 +399,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 17 fill here ---
+In our project, we used the Engine and Bucket services from GCP. We used Bucket and DVC to store two versions of each dataset, raw and processed. The raw data was used to create dataset statistics, and the processed data was used to train the actual model. Our data preprocessing script automatically preprocesses data and pushes tit o DVC and the defined GCP Bucket. We used the Compute Engine to train our models. Unfortunately (after many tries), we could not access an instance with available GPUs. Still, we implemented the pipeline to train a model using CPU on the Compute Engine. 
 
 ### Question 18
 
@@ -388,7 +414,17 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 18 fill here ---
+We used the GCP Compute Engine to run our model training. We used instance with the following hardware specifications:
+Location
+Machine
+GPU
+The instance was instantiated using a custom container that automatically ran the training script and saved the model weights locally and to Weights & Biases. As we couldn’t access a GPU, this wasn’t the optimal setup, but we deemed it valuable to implement the pipeline using the CPU anyway.
+
+We additionally used a VM instance to run the backend of our application. For this, we used an instance with the following specifications:
+Location
+Machine
+GPU
+This instance was also spun up using a custom docker file. See the docker file here.
 
 ### Question 19
 
@@ -397,7 +433,10 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 19 fill here ---
+Our GCP bucket contains versions of our dataset. In data.py you can call the load_from_dvc(file) function with e.g. file = ‘mmlu’ which will load a datasetConfig with a train, validation and test split of the preprocessed MMLU dataset.
+GCP Bucket (https://console.cloud.google.com/storage/browser/mlops-55-bucket;tab=objects?forceOnBucketsSortingFiltering=true&inv=1&invt=AbncTg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project&prefix=&forceOnObjectsSortingFiltering=false)
+
+
 
 ### Question 20
 
@@ -406,7 +445,8 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 20 fill here ---
+Artifact Registry (https://console.cloud.google.com/artifacts/docker/flash-rock-447808-n2/europe-north1/mlops-55?inv=1&invt=AbncRg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project)
+
 
 ### Question 21
 
@@ -415,7 +455,8 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 21 fill here ---
+Cloud Build History (https://console.cloud.google.com/cloud-build/builds?referrer=search&inv=1&invt=AbncRg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project)
+
 
 ### Question 22
 
@@ -429,8 +470,11 @@ s154097, s250393, s------ (Rachael DeVries)
 > *was because ...*
 >
 > Answer:
+We trained our model in the cloud using Vertex AI because it seamlessly integrates with our cloud bucket and has built-in support for managed ML workflows. Vertex AI leverages our Docker setup to manage data preprocessing, training, and model versioning in a unified platform, streamlining our development process with a single command and a few configuration files.
 
---- question 22 fill here ---
+Although Vertex AI allows for easy scalability, we could not access the GPU resources, though our request for GPU quota was approved. Despite this, Vertex AI’s flexibility allowed us to proceed with CPU-based training while ensuring reproducibility and structured model management.
+
+Overall, our choice of Vertex AI was driven by its comprehensive toolset and integration capabilities that facilitated a smooth end-to-end machine-learning workflow.
 
 ## Deployment
 
@@ -447,7 +491,11 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 23 fill here ---
+We did manage to write an API for our model. We implemented the API by defining endpoints for health checks, testing, and predictions. The /predict endpoint is crucial. It takes a query and list of choices and processes them using the fine-tuned ModernBERT model, returning the predicted probabilities for each answer choice.
+
+Implement some form of logging / feedback endpoint?
+
+We used Pydantic for data validation to ensure incoming requests conform to the expected structure. We also implemented an asynchronous lifespan context manager to load the model and tokenizer when the application starts and clean them when it shuts down. This optimized resource management and ensured that the model was ready for inference as soon as the API was running.
 
 ### Question 24
 
@@ -463,7 +511,17 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 24 fill here ---
+We deployed an API and app to GCP using FastAPI and Streamlit. The app runs on a standard E2 instance with only a CPU. Using CPU only is fine as we are deploying a relatively small model. If working only with the API and hosting it locally, it can be called with the following curl command:
+```bash
+curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d '{
+   "query": "What is the capital of France?",
+   "choices": ["Paris", "London", "Berlin", "Madrid"]
+}'
+```
+The above will return the most likely answer according to our model alongside the probabilities for the provided choices. We also developed a simple streamlit app, which we have deployed on the VM instance mentioned above. You can test it here: 
+
+Interface
+
 
 ### Question 25
 
@@ -478,7 +536,9 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 25 fill here ---
+We performed very simple unit testing of the API and did not perform any load testing of the API. We utilized pytest for all other tests and used unittest.mock to create a mock registry for the API. The mock functionality allowed us to simulate the behavior of the model and tokenizer without requiring the actual implementations. We wrote a single test case for the predicted endpoint, which is the critical feature of the API, which checks that the response status code is 200 and contains the expected fields.
+
+We could have used a tool like Locust to simulate multiple concurrent users for load testing. This allowed us to assess how the API would perform under stress (probably not very well) and identify any potential bottlenecks. Load testing is an essential component of deploying larger systems and provides insights into how much an API can handle before performance starts to degrade.
 
 ### Question 26
 
@@ -493,7 +553,9 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 26 fill here ---
+We did not manage to implement any monitoring of the deployed model. However, we recognize the importance of monitoring and how it affects the reliability of a deployed machine-learning application. We could have used a framework such as Evidently to monitor data drift. However, our use case and setup require slightly different tools because we work within the natural language processing domain. 
+
+To properly monitor the data inputted by our potential users, we would do some form of analysis, e.g., the type of questions or the general length, and additionally monitor metrics such as prediction accuracy. This could provide valuable insights into how well the model performs in a deployment scenario. This would require logging all questions asked to the model and relying on user feedback to log if the model started answering incorrectly. One way to monitor data drift in our situation would be to have another backend process that attempted to classify the topic of questions and monitor if the type of questions users asked changed over time. One could then implement a new training run with an updated dataset if the use case for the application started drifting (as measured via data drift).
 
 ## Overall discussion of project
 
@@ -528,7 +590,7 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 28 fill here ---
+As discussed in Q24, we implemented a front end for our API. This combined the API and Streamlit functionality and attempted to deploy an actual service using a simple VM instance.
 
 ### Question 29
 
@@ -576,4 +638,3 @@ s154097, s250393, s------ (Rachael DeVries)
 >
 > Answer:
 
---- question 31 fill here ---
