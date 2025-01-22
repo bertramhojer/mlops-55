@@ -44,7 +44,7 @@ class ModernBERTQA(l.LightningModule):
             attention_mask=batch["attention_mask"],
             labels=batch["labels"],
         )
-        self.log("train_loss", output.loss)
+        self.log("train/loss", output.loss)
         return output.loss
 
     def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
@@ -54,7 +54,7 @@ class ModernBERTQA(l.LightningModule):
             attention_mask=batch["attention_mask"],
             labels=batch["labels"],
         )
-        self.log("val_loss", output.loss.float())
+        self.log("val/loss", output.loss.float())
         return output.loss
 
     def test_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> dict[str, torch.Tensor]:
@@ -64,7 +64,7 @@ class ModernBERTQA(l.LightningModule):
             attention_mask=batch["attention_mask"][0],
             labels=batch["labels"][0],
         )
-        self.log("test_loss", output.loss)
+        self.log("test/loss", output.loss)
         return {
             "logits": output.logits,
             "labels": batch["labels"],
