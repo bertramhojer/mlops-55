@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
 
       - name: Install the project
-        run: uv sync --extra train
+        run: uv sync --extra train --extra deployment
 
       - name: Run tests
         run: uv run coverage run --source=src/ -m pytest
