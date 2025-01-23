@@ -50,7 +50,7 @@ def histogram_bar_chart(data: dict[str, Counter]):
     return fig
 
 
-def main(file: str = "mmlu") -> None:
+def main(file: str = "mmlu-balanced") -> None:
     """Compute dataset statistics."""
     _, dataset = load_from_dvc(file=file)
     dataset["train"] = datasets.Dataset.from_list(
