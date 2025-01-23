@@ -69,13 +69,10 @@ test = [
     "httpx>=0.25.0",
 ]
 
-api = [
+deployment = [
     "fastapi>=0.100.0",
     "uvicorn>=0.30.0",
     "httpx>=0.25.0",
-]
-
-frontend = [
     "streamlit>=1.28.2",
     "pandas>=2.1.3",
     "google-cloud-run>=0.10.5",
