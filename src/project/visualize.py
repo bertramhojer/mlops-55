@@ -51,10 +51,14 @@ def histogram_bar_chart(data: dict[str, Counter]):
 
 def render_examples(example):
     """Display example Question and Answer"""
-    tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-    train_example = tokenizer.decode(example["input_ids"]).replace("[PAD]", "")
-    answer = example["labels"]
-    print(f"Question: {train_example}, Answer: {answer}")
+    print("## Example Question")
+    print()
+    print(f"{example['question']}")
+    print()
+    for _, choice in enumerate(example['choices']):
+        print(f"- {choice}")
+    print()
+    print(f"**Answer**: {example['choices'][example['answer']]}")
 
 
 def main(file: str = "mmlu") -> None:
