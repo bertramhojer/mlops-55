@@ -23,7 +23,8 @@ def classify_prompt(prompt: str):
     response = requests.post(predict_url, files={"prompt:": prompt}, timeout=5)
     if response.status_code == 200:
         return response.json()
-    return Exception(f"Failed to classify prompt: {response.status_code} {response.text}")
+    msg = f"Failed to classify prompt: {response.status_code} {response.text}"
+    raise Exception(msg)
 
 
 def main() -> None:

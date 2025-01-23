@@ -3,8 +3,6 @@ from pathlib import Path
 import pydantic
 import pydantic_settings
 import torch
-import wandb
-from loguru import logger
 
 
 class ProjectSettings(pydantic_settings.BaseSettings):

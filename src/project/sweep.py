@@ -1,7 +1,7 @@
 # Import the W&B Python Library and log into W&B
-import wandb
 from dotenv import load_dotenv
 
+import wandb
 from project.train import run
 
 # Initialize wandb logger
