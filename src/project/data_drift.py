@@ -51,7 +51,7 @@ if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # ty
     import torch._dynamo  # noqa: F401
 
     torch._dynamo.config.suppress_errors = True  # type: ignore[attr-defined]  # noqa: SLF001
-    
+
 
 def check_data_drift(config: DriftConfig):
     """Check data drift between train and test data."""
@@ -130,7 +130,7 @@ def check_data_drift(config: DriftConfig):
 
     report.run(reference_data = train_df, current_data = test_df, 
             column_mapping = column_mapping)
-    report.save_html("src/project/reports/drift_report.html")
+    report.save_html("reports/drift_report.html")
 
     plt.figure(figsize=(10, 6))
     sns.kdeplot(train_pos_probs, label="Train")
@@ -140,7 +140,7 @@ def check_data_drift(config: DriftConfig):
     plt.title("Positive probability distribution")
     plt.legend()
     plt.tight_layout()
-    plt.savefig("src/project/reports/positive_probability_density.png")
+    plt.savefig("reports/positive_probability_density.png")
 
 
 if __name__ == "__main__":
