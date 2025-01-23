@@ -15,7 +15,8 @@ def test_get_backend_url(mock_services_client):
 
     url = get_backend_url()
     if url != "http://backend-url":
-        raise AssertionError(f"Expected 'http://backend-url', but got {url}")
+        msg = f"Expected 'http://backend-url', but got {url}"
+        raise AssertionError(msg)
 
 
 @patch("src.project.frontend.get_backend_url")
@@ -30,7 +31,8 @@ def test_classify_prompt(mock_post, mock_get_backend_url):
 
     result = classify_prompt("test prompt")
     if result != {"result": "success"}:
-        raise AssertionError(f'Expected \'{{"result": "success"}}\', but got {result}')
+        msg = f'Expected \'{{"result": "success"}}\', but got {result}'
+        raise AssertionError(msg)
 
     mock_post.assert_called_once_with("http://backend-url/predict", files={"prompt:": "test prompt"}, timeout=5)
 
