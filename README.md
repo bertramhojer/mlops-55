@@ -18,6 +18,10 @@ MLOps-DTU: <a href="https://skaftenicki.github.io/dtu_mlops/">Machine Learning O
 
 <br/>
 
+**👉 Click the image to visit the Frontend Application!**
+
+[![Frontend Application](https://github.com/bertramhojer/mlops-55/images/frontend.png)](https://modernbert-frontend-203438086142.europe-west1.run.app)
+
 # Introduction
 <details>
 <summary>🐙 Project Description</summary>
