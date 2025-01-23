@@ -1,3 +1,9 @@
+# /// script
+# dependencies = [
+#   "torch",
+# ]
+# ///
+
 import typing
 
 import pytest

@@ -42,7 +42,8 @@ def test_subset_dataset(mock_dataset):
     """Test subsetting a dataset."""
     subset = subset_dataset(mock_dataset, subset_size=1, random_seed=42)
     if len(subset) != 1:
-        raise AssertionError(f"Expected subset length to be 1, but got {len(subset)}")
+        msg = f"Expected subset length to be 1, but got {len(subset)}"
+        raise AssertionError(msg)
 
 
 def test_preprocess_binary(mock_dataset, mock_tokenizer):
@@ -50,9 +51,11 @@ def test_preprocess_binary(mock_dataset, mock_tokenizer):
     example = mock_dataset[0]
     processed = preprocess_binary(example, mock_tokenizer, max_length=128)
     if len(processed) != 4:
-        raise AssertionError(f"Expected 4 processed examples, but got {len(processed)}")
+        msg = f"Expected 4 processed examples, but got {len(processed)}"
+        raise AssertionError(msg)
     if not all(isinstance(ex["input_ids"], torch.Tensor) for ex in processed):
-        raise AssertionError("Not all processed examples have 'input_ids' as torch.Tensor")
+        msg = "Not all processed examples have 'input_ids' as torch.Tensor"
+        raise AssertionError(msg)
 
 
 def test_preprocess_dataset(mock_dataset, mock_tokenizer):
@@ -60,6 +63,8 @@ def test_preprocess_dataset(mock_dataset, mock_tokenizer):
     processed = preprocess_dataset(mock_dataset, mock_tokenizer, max_length=128)
     # The number of processed examples should be 2 (original examples) * 3 (binary choices per example)
     if len(processed) != len(mock_dataset) * 3:
-        raise AssertionError(f"Expected {len(mock_dataset) * 3} processed examples, but got {len(processed)}")
+        msg = f"Expected {len(mock_dataset) * 3} processed examples, but got {len(processed)}"
+        raise AssertionError(msg)
     if "input_ids" not in processed.column_names:
-        raise AssertionError("'input_ids' not found in processed column names")
+        msg = "'input_ids' not found in processed column names"
+        raise AssertionError(msg)
