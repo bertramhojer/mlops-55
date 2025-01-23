@@ -1,0 +1,5 @@
+# train/default.yaml
+defaults:
+  - base  # Inherits settings from base.yaml
+
+device: "cpu"

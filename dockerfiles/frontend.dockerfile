@@ -1,24 +1,39 @@
+# Use Python 3.12 slim as base image
 FROM python:3.12-slim AS base
 
-RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc git && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# Copy UV binary from its official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN mkdir /app
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    gcc \
+    git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
 WORKDIR /app
 
-# Copy only the necessary files
-COPY pyproject.toml /app/pyproject.toml
-COPY src/project/frontend.py /app/frontend.py
+# Copy project files
+COPY . .
 
-# Create and activate virtual environment
-ENV UV_PROJECT_ENVIRONMENT=/app/.venv
-RUN uv venv
-ENV PATH="/app/.venv/bin:$PATH"
+# Install dependencies using uv
+RUN uv sync --group deployment && \
+    echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc
 
-# Install only frontend dependencies
-RUN uv sync --groups=frontend
+# Set PATH for the current build stage
+ENV PATH=/app/.venv/bin:$PATH
 
-EXPOSE $PORT
+# Add src to PYTHONPATH
+ENV PYTHONPATH=/app/src:$PYTHONPATH
 
-ENTRYPOINT ["streamlit", "run", "frontend.py", "--server.port", "$PORT", "--server.address=0.0.0.0"]
+# Expose the Streamlit port
+EXPOSE 8501
+
+# Set environment variable for the API URL
+ENV API_URL=http://modernbert-api:8000
+
+# Command to run the application
+CMD ["streamlit", "run", "src/project/frontend.py", "--server.port", "8501", "--server.address", "0.0.0.0"]

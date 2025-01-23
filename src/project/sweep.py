@@ -19,10 +19,10 @@ sweep_configuration = {
             "parameters": {
                 "lr": {"max": 0.1, "min": 0.0001},
                 "weight_decay": {"max": 0.1, "min": 0.001},
-                "momentum": {"max": 0.9, "min": 0.1, "conditions": {"optimizer_name": "SGD"}}
+                "momentum": {"max": 0.9, "min": 0.1, "conditions": {"optimizer_name": "SGD"}},
             }
-        }
-    }
+        },
+    },
 }
 
 # 3: Start the sweep

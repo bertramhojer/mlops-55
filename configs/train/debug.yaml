@@ -1,0 +1,9 @@
+# train/default.yaml
+defaults:
+  - base  # Inherits settings from base.yaml
+
+device: "cpu"
+model_name: "prajjwal1/bert-tiny"
+epochs: 1
+batch_size: 4
+eval_batch_size: 2

@@ -4,8 +4,11 @@ from typing import Any
 import datasets
 import numpy as np
 import torch
+import typer
 from dvc.repo import Repo
 from transformers import AutoTokenizer
+
+from project.settings import settings
 
 
 def subset_dataset(dataset: datasets.Dataset, subset_size: int, random_seed: int) -> datasets.Dataset:
@@ -20,11 +23,15 @@ def subset_dataset(dataset: datasets.Dataset, subset_size: int, random_seed: int
 
 
 def preprocess_binary(
-    example: dict[str, Any], tokenizer: AutoTokenizer, max_length: int, is_auxiliary_train: bool = False
+    example: dict[str, Any],
+    tokenizer: AutoTokenizer,
+    max_length: int,
+    is_auxiliary_train: bool = False,
+    limit_examples: int | None = None,
 ) -> list[dict[str, torch.Tensor]]:
     """Convert a single MMLU example into multiple binary classification examples."""
     # Handle nested structure for auxiliary_train
-    if is_auxiliary_train:
+    if is_auxiliary_train and "train" in example:
         example = example["train"]
 
     question = example["question"]
@@ -44,6 +51,8 @@ def preprocess_binary(
                 "label": torch.Tensor([float(idx == correct_answer)]),
             }
         )
+        if limit_examples is not None and idx == limit_examples:
+            break
 
     return processed_examples
 
@@ -54,7 +63,7 @@ def preprocess_dataset(
     """Preprocess entire MMLU dataset."""
 
     def process_binary(example: dict[str, Any]) -> dict[str, torch.Tensor]:
-        processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train)
+        processed = preprocess_binary(example, tokenizer, max_length, is_auxiliary_train, limit_examples=2)
         return {
             "input_ids": torch.stack([ex["input_ids"] for ex in processed]),
             "attention_mask": torch.stack([ex["attention_mask"] for ex in processed]),
@@ -149,6 +158,13 @@ def load_from_dvc(file: str, remote: str = "remote_storage") -> tuple[datasets.D
     processed_path = Path("data/processed") / file
     raw_path = Path("data/raw") / file
 
+    if settings.GCP_JOB:
+        # If GCP job running with Vertex AI, load datasets directly from GCS
+        remote_bucket = f"/gcs/{settings.GCP_BUCKET}"
+        dset_proc = datasets.load_from_disk(remote_bucket / processed_path)
+        dset_raw = datasets.load_from_disk(remote_bucket / raw_path)
+        return dset_proc, dset_raw
+
     if not processed_path.exists() or not raw_path.exists():
         # init dvc repo
         repo = Repo(".")
@@ -160,37 +176,38 @@ def load_from_dvc(file: str, remote: str = "remote_storage") -> tuple[datasets.D
     return (datasets.load_from_disk(processed_path), datasets.load_from_disk(raw_path))
 
 
+app = typer.Typer()
+tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
+
+
+@app.command()
+def create_dataset(
+    subset_size: int | None = typer.Option(None, help="Size of the training subset."),
+    filepath: str = typer.Option("mmlu_tiny", help="Path to the dataset."),
+):
+    """Create a dataset."""
+    print("Loading dataset...")
+    aux_train = datasets.load_dataset("cais/mmlu", "auxiliary_train", split="train")
+    validation = datasets.load_dataset("cais/mmlu", "all", split="validation")
+    test = datasets.load_dataset("cais/mmlu", "all", split="test")
+
+    print("Creating dataset...")
+    processed_dataset, raw_dataset = create_dataset_dict(
+        train=aux_train,
+        validation=validation,
+        test=test,
+        tokenizer=tokenizer,
+        max_length=512,
+        subset_size=subset_size,
+    )
+    dataset_to_dvc(processed_dataset, raw_dataset, filepath)
+
+
+@app.command()
+def load_dataset(path: str = typer.Option(..., help="Path to the dataset.")):
+    """Load a dataset."""
+    load_from_dvc(path)
+
+
 if __name__ == "__main__":
-    import typer
-
-    app = typer.Typer()
-    tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-
-    @app.command()
-    def create_dataset(
-        subset_size: int | None = typer.Option(None, help="Size of the training subset."),
-        filepath: str = typer.Option("mmlu_tiny", help="Path to the dataset."),
-    ):
-        """Create a dataset."""
-        print("Loading dataset...")
-        aux_train = datasets.load_dataset("cais/mmlu", "auxiliary_train", split="train")
-        validation = datasets.load_dataset("cais/mmlu", "all", split="validation")
-        test = datasets.load_dataset("cais/mmlu", "all", split="test")
-
-        print("Creating dataset...")
-        processed_dataset, raw_dataset = create_dataset_dict(
-            train=aux_train,
-            validation=validation,
-            test=test,
-            tokenizer=tokenizer,
-            max_length=512,
-            subset_size=subset_size,
-        )
-        dataset_to_dvc(processed_dataset, raw_dataset, filepath)
-
-    @app.command()
-    def load_dataset(path: str = typer.Option(..., help="Path to the dataset.")):
-        """Load a dataset."""
-        load_from_dvc(path)
-
     app()

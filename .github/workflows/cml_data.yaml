@@ -28,7 +28,7 @@ jobs:
         enable-cache: true
 
     - name: Install the project
-      run: uv sync
+      run: uv sync --extra deployment --extra train
 
     - name: Auth with GCP
       uses: google-github-actions/auth@v2
@@ -38,10 +38,6 @@ jobs:
     - name: Pull data
       run: |
         dvc pull --no-run-cache || true
-
-    - name: Check data statistics
-      run: |
-        uv run stats
 
     - name: Check data statistics & generate report
       run: |

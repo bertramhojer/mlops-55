@@ -36,35 +36,3 @@ repos:
       language: system
       types: [python]
       pass_filenames: false
-
-- repo: local
-  hooks:
-    - id: dvc-pre-commit
-      name: DVC pre-commit
-      entry: uv run dvc
-      language: system
-      args: [git-hook, pre-commit]
-      stages:
-        - pre-commit
-      verbose: true
-      require_serial: true
-
-    - id: dvc-pre-push
-      name: DVC pre-push
-      entry: uv run dvc
-      language: system
-      args: [git-hook, pre-push]
-      stages:
-        - pre-push
-      require_serial: true
-
-    - id: dvc-post-checkout
-      name: DVC post-checkout
-      entry: uv run dvc
-      language: system
-      args: [git-hook, post-checkout]
-      minimum_pre_commit_version: 2.2.0
-      stages:
-        - post-checkout
-      require_serial: true
-      always_run: true

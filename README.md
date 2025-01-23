@@ -1,10 +1,10 @@
 # Project Description
 
 **Goal:**
-The primary purpose of this project is to finetune a cutting-edge natural language processing model to perform binary or multiclass classification on a multiple-choice Q&A dataset for knowledge evaluation across various subjects. The secondary purpose is for the authors of this repository to further develop their MLOps skills by employing a variety of tools for model development, deployment, and maintenance.  
+The primary purpose of this project is to finetune a cutting-edge natural language processing model to perform binary or multiclass classification on a multiple-choice Q&A dataset for knowledge evaluation across various subjects. The secondary purpose is for the authors of this repository to further develop their MLOps skills by employing a variety of tools for model development, deployment, and maintenance.
 
 **Framework:**
-We use HuggingFace’s transformers library to load the pre-trained ModernBERT embeddings and PyTorch-Lightning to fine-tune the model on the specified dataset. Weights and Biases will be utilized to optimize ModernBERT’s hyperparameters, and resulting models will be evaluated with several Scikit-learn metrics. For packaging management and development, we employ uv and Docker dev containers to ensure every group member starts with the same environment configuration when working on the project. 
+We use HuggingFace’s transformers library to load the pre-trained ModernBERT embeddings and PyTorch-Lightning to fine-tune the model on the specified dataset. Weights and Biases will be utilized to optimize ModernBERT’s hyperparameters, and resulting models will be evaluated with several Scikit-learn metrics. For packaging management and development, we employ uv and Docker dev containers to ensure every group member starts with the same environment configuration when working on the project.
 
 **Data:**
 We use HuggingFace datasets to load the MMLU (Massive Multitask Language Understanding)  dataset. The dataset is preprocessed to fine-tune a BERT model. We provide both a binary and multi-class format of the data. The binary format dataset is 4x larger, providing certain benefits: more training data and a more explicit learning signal from negative and positive examples. The multi-class format dataset only contains correct question-answer pairs, resulting in faster inference than the binary format, as we only need one inference to pass for classification (instead of four).

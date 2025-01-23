@@ -5,13 +5,22 @@ steps:
     'build',
     '.',
     '-t',
-    'europe-west1-docker.pkg.dev/gleaming-city-447712-b0/mmlu-container/setup-container',
+    '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REGISTRY}/${_IMAGE_NAME}:latest',
     '-f',
-    'dockerfiles/setup.dockerfile'
+    'dockerfiles/train.dockerfile'
   ]
+
 - name: 'gcr.io/cloud-builders/docker'
   id: 'Push container image'
   args: [
     'push',
-    'europe-west1-docker.pkg.dev/gleaming-city-447712-b0/mmlu-container/setup-container'
+    '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REGISTRY}/${_IMAGE_NAME}:latest'
   ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGISTRY: 'mlops55'
+  _LOCATION: 'europe-west1'
+  _IMAGE_NAME: 'trainer-image'

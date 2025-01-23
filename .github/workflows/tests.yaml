@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   test:
@@ -27,7 +28,30 @@ jobs:
           enable-cache: true
 
       - name: Install the project
-        run: uv sync
+        run: uv sync --extra train --extra deployment
 
       - name: Run tests
-        run: uv run pytest tests
+        run: uv run coverage run --source=src/ -m pytest
+
+      - name: Generate coverage report
+        run: |
+          echo '## Code Coverage Report' >> cov.md
+          uv run coverage report -m --format="markdown" >> cov.md
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Coverage'
+
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: 'cov.md'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          edit-mode: replace
+
