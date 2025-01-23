@@ -56,10 +56,9 @@ def visualize(cfg: DictConfig) -> None:
 
     # print an example Q&A
     tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-    for i in range(4):
-        train_example = tokenizer.decode(train_dataset[i]["input_ids"]).replace("[PAD]", "")
-        answer = train_dataset[i]["labels"]
-        print(f"Question: {train_example}, Answer: {answer}")
+    train_example = tokenizer.decode(train_dataset[i]["input_ids"]).replace("[PAD]", "")
+    answer = train_dataset[i]["labels"]
+    print(f"Question: {train_example}, Answer: {answer}")
 
 if __name__ == "__main__":
     visualize()
