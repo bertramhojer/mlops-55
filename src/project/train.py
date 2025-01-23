@@ -2,6 +2,7 @@ import json
 import typing
 from typing import TYPE_CHECKING
 
+import hydra
 import pydantic
 import pydantic_settings
 import torch
@@ -9,9 +10,9 @@ from lightning import Trainer
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
-import hydra
+import wandb
 from project.collate import collate_fn
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
@@ -34,9 +35,22 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore", frozen=True, arbitrary_types_allowed=True)
 
 
+def _override_with_wandb(cfg: DictConfig) -> DictConfig:
+    wandb.init()
+    OmegaConf.set_struct(cfg, False)
+    for key, value in wandb.config.items():
+        keys = key.split(".")
+        current = cfg
+        for k in keys[:-1]:
+            current = current[k]
+        current[keys[-1]] = value
+    OmegaConf.set_struct(cfg, True)
+    return cfg
+
 @hydra.main(version_base="1.3", config_path=str(PROJECT_DIR / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
+    cfg = _override_with_wandb(cfg)
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
     pprint_config(cfg)
     run_train(config)

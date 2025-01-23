@@ -1,31 +1,28 @@
-# Import the W&B Python Library and log into W&B
-from dotenv import load_dotenv
+import typer
 
 import wandb
+from project.settings import settings
 from project.train import run
 
-# Initialize wandb logger
-load_dotenv()
 
-
-# 2: Define the search space
-sweep_configuration = {
-    "method": "bayes",
-    "metric": {"goal": "minimize", "name": "val_loss"},
-    "parameters": {
-        "batch_size": {"values": [1, 3, 7]},
-        "optimizer_name": {"values": ["Adam", "SGD"]},
-        "optimizer_params": {
-            "parameters": {
-                "lr": {"max": 0.1, "min": 0.0001},
-                "weight_decay": {"max": 0.1, "min": 0.001},
-                "momentum": {"max": 0.9, "min": 0.1, "conditions": {"optimizer_name": "SGD"}},
-            }
+def main() -> None:
+    sweep_configuration = {
+        "method": "bayes",
+        "metric": {"goal": "minimize", "name": "val/loss"},
+        "parameters": {
+            "train.epochs": {"values": [3]},
+            "train.n_train_samples": {"values": [5000]},
+            "train.n_val_samples": {"values": [1000]},
+            "train.batch_size": {"values": [4, 16, 32]},
+            "optimizer.optimizer_name": {"values": ["Adam", "SGD"]},
+            "optimizer.optimizer_params.lr": {"min": 0.0001, "max": 0.1},
+            "optimizer.optimizer_params.weight_decay": {"min": 0.001, "max": 0.1},
         },
-    },
-}
+    }
 
-# 3: Start the sweep
-sweep_id = wandb.sweep(sweep=sweep_configuration)
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project=settings.WANDB_PROJECT)
 
-wandb.agent(sweep_id, function=run, count=10)
+    wandb.agent(sweep_id, function=run, count=10)
+
+if __name__ == "__main__":
+    typer.run(main)
