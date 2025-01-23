@@ -51,10 +51,11 @@ if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # ty
 
 def run_train(config: ExperimentConfig):
     """Train model, saves model to output_dir."""
-    train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
-
     wandb_logger = WandbLogger(
-        project=settings.WANDB_PROJECT, entity=settings.WANDB_ENTITY, log_model=True
+        project=settings.WANDB_PROJECT,
+        entity=settings.WANDB_ENTITY,
+        log_model=True,
+        config={f"{k}/{_k}": v for k, d in config.model_dump().items() if isinstance(d, dict) for _k, v in d.items()},
     )
 
     # Load processed datasets
@@ -89,7 +90,7 @@ def run_train(config: ExperimentConfig):
         optimizer_params=config.optimizer.optimizer_params,
     )
     checkpoint_callback = ModelCheckpoint(
-        dirpath=train_output_dir,
+        dirpath=config.train.output_dir,
         monitor=config.train.monitor,
         mode=config.train.mode,
         filename="model-{epoch:02d}-{" + config.train.monitor + ":.2f}",
@@ -106,7 +107,7 @@ def run_train(config: ExperimentConfig):
         accelerator=str(settings.DEVICE),
         max_epochs=config.train.epochs,
         devices="auto",
-        default_root_dir=train_output_dir,
+        default_root_dir=config.train.output_dir,
         logger=wandb_logger,
         log_every_n_steps=5,
         precision="32",
@@ -117,7 +118,7 @@ def run_train(config: ExperimentConfig):
         val_dataloaders=val_loader,
     )
 
-    with open(f"{train_output_dir}/metadata.json", "w") as f:
+    with open(f"{config.train.output_dir}/metadata.json", "w") as f:
         metadata = {"best_model_file": checkpoint_callback.best_model_path, "wandb_run_id": wandb_logger.experiment.id}
         json.dump(metadata, f)
 

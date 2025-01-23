@@ -1,0 +1,10 @@
+seed: 42
+model_name: "prajjwal1/bert-tiny"
+device: "cpu"
+epochs: 1
+batch_size: 4
+eval_batch_size: 2
+output_dir: "models/"
+monitor: "val/loss"
+mode: "min"
+patience: 1
