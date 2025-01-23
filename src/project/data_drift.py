@@ -45,6 +45,14 @@ def run(cfg: DictConfig) -> None:
     pprint_config(cfg)
     check_data_drift(config)
 
+
+if torch.cuda.is_available() and torch.version.cuda.split(".")[0] == "11":  # type: ignore  # noqa: PGH003
+    # Will enable run on certain servers, do no delete
+    import torch._dynamo  # noqa: F401
+
+    torch._dynamo.config.suppress_errors = True  # type: ignore[attr-defined]  # noqa: SLF001
+    
+
 def check_data_drift(config: DriftConfig):
     """Check data drift between train and test data."""
     dataset, _ = load_from_dvc(config.file_name)
@@ -106,11 +114,11 @@ def check_data_drift(config: DriftConfig):
     test_df = pd.DataFrame(test_hidden_states.numpy(), columns=[f"emb_{i}" for i in range(test_hidden_states.shape[1])])
 
     column_mapping = ColumnMapping(
-        embeddings={'small_subset': train_df.columns.tolist()}
+        embeddings={'emb': train_df.columns.tolist()}
     )
     
     report = Report(metrics=[
-        EmbeddingsDriftMetric('small_subset',
+        EmbeddingsDriftMetric('emb',
                             drift_method = model(
                               threshold = 0.55,
                               bootstrap = None,
