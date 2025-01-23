@@ -23,6 +23,8 @@ dependencies = [
     "loguru>=0.7.3",
     "dvc>=3.59.0",
     "dvc-gs>=3.0.1",
+    "torch>=2.3.1",
+    "lightning>=2.5.0.post0",
 ]
 
 
@@ -36,19 +38,11 @@ preprocess = "project.data:app"
 train = [
     "wandb>=0.19.3",
     "omegaconf>=2.3.0",
-    "lightning>=2.5.0.post0",
     "scikit-learn>=1.6.1",
     "hydra-core==1.3.2",
     "hydra-colorlog==1.2.0",
     "hydra-optuna-sweeper==1.2.0",
-    "rich>=13.9.4",
-    "torch>=2.3.1",
-]
-
-frontend = [
-    "streamlit>=1.28.2",
-    "pandas>=2.1.3",
-    "google-cloud-run>=0.10.5",
+    "rich>=13.9.4"
 ]
 
 [dependency-groups]
@@ -73,10 +67,6 @@ test = [
     "fastapi>=0.100.0",
     "uvicorn>=0.30.0",
     "httpx>=0.25.0",
-]
-
-cpu = [
-    "torch>=2.3.1",
 ]
 
 api = [
