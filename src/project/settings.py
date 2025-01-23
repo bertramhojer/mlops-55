@@ -13,7 +13,7 @@ class ProjectSettings(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore", protected_namespaces=("settings_",))
     WANDB_PROJECT: str = "ModernBERTQA"
     WANDB_ENTITY: str = "mlops_55"
-    WANDB_API_KEY: str = pydantic.Field(..., description="Wandb API key")
+    WANDB_API_KEY: str = pydantic.Field(default="", description="Wandb API key")
     DEVICE: torch.device = torch.device(
         "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     )
