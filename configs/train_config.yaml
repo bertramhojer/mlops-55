@@ -6,7 +6,7 @@ defaults:
   - _self_
   - datamodule: default
   - optimizer: sgd
-  - train: default
+  - train: base
 
   # experiment configs allow for version control of specific hyperparameters
   # e.g. best hyperparameters for given model and datamodule

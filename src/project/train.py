@@ -75,12 +75,14 @@ def run_train(config: ExperimentConfig):
         batch_size=config.train.batch_size,
         shuffle=True,
         collate_fn=collate_fn,
+        num_workers=config.train.num_workers,
     )
     val_loader = torch.utils.data.DataLoader(
         typing.cast(torch.utils.data.Dataset, val_dataset),
         batch_size=config.train.batch_size,
         shuffle=False,
         collate_fn=collate_fn,
+        num_workers=config.train.num_workers,
     )
 
     # Initialize model
@@ -106,7 +108,8 @@ def run_train(config: ExperimentConfig):
         callbacks=[checkpoint_callback, early_stopping_callback],
         accelerator=str(settings.DEVICE),
         max_epochs=config.train.epochs,
-        devices="auto",
+        strategy=config.train.strategy,
+        devices=config.train.devices,
         default_root_dir=config.train.output_dir,
         logger=wandb_logger,
         log_every_n_steps=5,
