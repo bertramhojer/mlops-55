@@ -611,6 +611,8 @@ The backend loads the most recent model from a specified project in Weights & Bi
 >
 > Answer:
 
+![Diagram](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/diagram.png)
+
 The starting point of the diagram is our local setup, where we integrated Docker, DVC, and Wandb into our code. The development environment is managed using DevContainer, which ensures consistency across different setups. The core application includes modules for Model, Train, Hyperparameter optimization, Data, Frontend, API, and Visualize, with dependencies managed via UV and specified in pyproject.toml. Dependencies are versioned with a uv.lock which we push to GitHub. Data is versioned using DVC, which links local datasets to cloud storage, ensuring efficient tracking and reproducibility.
 
 Whenever we commit code and push to GitHub, it automatically triggers GitHub Actions, which handle continuous integration and deployment workflows. These actions build the application, run tests, and push artifacts to Google Artifact Registry, ensuring that the latest versions of models and dependencies are readily available for deployment.
