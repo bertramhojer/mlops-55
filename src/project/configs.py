@@ -32,6 +32,9 @@ class TrainConfig(pydantic.BaseModel):
     patience: int = pydantic.Field(..., description="Patience for early stopping")
     n_train_samples: int | None = pydantic.Field(None, description="Number of training samples")
     n_val_samples: int | None = pydantic.Field(None, description="Number of validation samples")
+    strategy: str = pydantic.Field("auto", description="Strategy for distributed training")
+    devices: str = pydantic.Field(default="auto", description="Device to use for training")
+    num_workers: int = pydantic.Field(default=1, description="Number of workers for data loading")
 
     @pydantic.field_validator("output_dir", mode="before")
     @classmethod

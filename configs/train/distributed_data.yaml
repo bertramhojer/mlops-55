@@ -2,4 +2,4 @@
 defaults:
   - base  # Inherits settings from base.yaml
 
-device: "cpu"
+num_workers: 1

@@ -19,7 +19,7 @@ class ProjectSettings(pydantic_settings.BaseSettings):
         "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     )
     GCP_REGION: str = "europe-north1"
-    GCP_PROJECT_ID: str
+    GCP_PROJECT_ID: str = "flash-rock-447808-n2"
     GCP_REGISTRY: str = "mlops-55"
     GCP_JOB: bool = False
     GCP_BUCKET: str = "mlops-55-bucket"
