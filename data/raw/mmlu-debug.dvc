@@ -1,0 +1,6 @@
+outs:
+- md5: 2594204904592afd287d7e34acc688b2.dir
+  size: 9367315
+  nfiles: 10
+  hash: md5
+  path: mmlu-debug

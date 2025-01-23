@@ -54,7 +54,7 @@ def run_train(config: ExperimentConfig):
     train_output_dir = str(settings.PROJECT_DIR / config.train.output_dir)
 
     wandb_logger = WandbLogger(
-        project=settings.WANDB_PROJECT, entity=settings.WANDB_ENTITY, log_model=True, save_dir=train_output_dir
+        project=settings.WANDB_PROJECT, entity=settings.WANDB_ENTITY, log_model=True
     )
 
     # Load processed datasets

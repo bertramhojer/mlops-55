@@ -5,6 +5,8 @@ epochs: 10
 batch_size: 32
 eval_batch_size: 8
 output_dir: "models/"
-monitor: "val_loss"
+monitor: "val/loss"
 mode: "min"
 patience: 2
+n_train_samples: 5000
+n_val_samples: 1000
