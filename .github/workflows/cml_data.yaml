@@ -28,7 +28,7 @@ jobs:
         enable-cache: true
 
     - name: Install the project
-      run: uv sync --extra frontend --extra train
+      run: uv sync --extra deployment --extra train
 
     - name: Auth with GCP
       uses: google-github-actions/auth@v2
