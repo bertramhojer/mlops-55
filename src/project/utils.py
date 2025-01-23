@@ -1,5 +1,6 @@
 import torch
 
+
 def aggregate_over_options(logits: torch.Tensor, labels: torch.Tensor, num_options: int = 4):
     """Aggregate logits over options."""
     preds = logits.softmax(dim=1)[:, 1]

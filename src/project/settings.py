@@ -3,7 +3,6 @@ from pathlib import Path
 import pydantic
 import pydantic_settings
 import torch
-import wandb
 
 
 class ProjectSettings(pydantic_settings.BaseSettings):
@@ -26,4 +25,3 @@ class ProjectSettings(pydantic_settings.BaseSettings):
 
 
 settings = ProjectSettings()  # type: ignore  # noqa: PGH003
-wandb.login()

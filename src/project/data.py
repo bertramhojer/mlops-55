@@ -31,7 +31,7 @@ def preprocess_binary(
 ) -> list[dict[str, torch.Tensor]]:
     """Convert a single MMLU example into multiple binary classification examples."""
     # Handle nested structure for auxiliary_train
-    if is_auxiliary_train:
+    if is_auxiliary_train and "train" in example:
         example = example["train"]
 
     question = example["question"]

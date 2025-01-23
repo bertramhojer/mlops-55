@@ -1,25 +1,25 @@
 import json
 import pathlib
-import pydantic
-import pydantic_settings
 from collections import Counter
 from typing import TYPE_CHECKING
 
-import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pydantic
+import pydantic_settings
+import seaborn as sns
 import torch
 from lightning import Trainer
 from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 
+import hydra
 from project.collate import collate_fn
-from project.configs import TestConfig, DatasetConfig
+from project.configs import DatasetConfig, TestConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
 from project.settings import settings
@@ -44,6 +44,7 @@ class StoreTestPreds(Callback):
         """Store test logits and labels."""
         self.test_logits = torch.cat([self.test_logits, batch["logits"].cpu()])
         self.test_labels = torch.cat([self.test_labels, batch["labels"].cpu()])
+
 
 class EvaluateConfig(pydantic_settings.BaseSettings):
     """Configuration for running evaluations."""
@@ -79,13 +80,15 @@ def run_test(config: EvaluateConfig):
     if config.test.n_test_samples:
         test_samples_divisible = config.test.n_test_samples + 4 - (config.test.n_test_samples % 4)
         test_dataset = test_dataset.select(range(test_samples_divisible))
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=config.test.batch_size, shuffle=False, collate_fn=collate_fn)
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset, batch_size=config.test.batch_size, shuffle=False, collate_fn=collate_fn
+    )
 
     with open(f"{config.test.checkpoint_dir}/metadata.json") as f:
         metadata_dict = json.load(f)
         wandb_id = metadata_dict["wandb_run_id"]
         best_model_filename = metadata_dict["best_model_file"]
-    
+
     # Load pretrained model from models and evaluate
     model = ModernBERTQA.load_from_checkpoint(best_model_filename)
 
@@ -116,8 +119,7 @@ def run_test(config: EvaluateConfig):
     true_label_distribution = {cls: label_counts[cls] / len(all_labels) for cls in classes}
     predicted_label_distribution = {cls: pred_counts[cls] / len(all_preds) for cls in classes}
     label_biases = {
-        int(cls): abs(predicted_label_distribution.get(cls, 0) - true_label_distribution.get(cls, 0))
-        for cls in classes
+        int(cls): abs(predicted_label_distribution.get(cls, 0) - true_label_distribution.get(cls, 0)) for cls in classes
     }
 
     # Make confusion matrix sklearn and save to dir
@@ -130,7 +132,6 @@ def run_test(config: EvaluateConfig):
     plt.title("Confusion Matrix")
     plt.savefig(confusion_matrix_path)
     logger.info(f"Confusion matrix saved to: {confusion_matrix_path}")
-   
 
     # Save evaluation results
     output_path = pathlib.Path(config.test.output_dir) / "evaluation_results.json"
@@ -147,7 +148,6 @@ def run_test(config: EvaluateConfig):
     wandb_logger.log_table("test/metrics", dataframe=results_table)
     wandb_logger.log_table("test/label_biases", dataframe=label_biases_table)
     wandb_logger.log_image("test/confusion_matrix", [str(confusion_matrix_path)], caption=["Confusion Matrix"])
-   
 
 
 if __name__ == "__main__":
