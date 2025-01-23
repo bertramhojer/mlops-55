@@ -4,13 +4,13 @@ import pydantic
 import pydantic_settings
 import torch
 
+PROJECT_DIR: Path = Path(__file__).parent.parent.parent
+
 
 class ProjectSettings(pydantic_settings.BaseSettings):
     """Base settings for client configurations."""
 
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore", protected_namespaces=("settings_",))
-
-    PROJECT_DIR: Path = Path(__file__).parent.parent.parent
     WANDB_PROJECT: str = "ModernBERTQA"
     WANDB_ENTITY: str = "mlops_55"
     WANDB_API_KEY: str = pydantic.Field(..., description="Wandb API key")

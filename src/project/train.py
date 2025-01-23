@@ -16,7 +16,7 @@ from project.collate import collate_fn
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
 from project.model import ModernBERTQA
-from project.settings import settings
+from project.settings import PROJECT_DIR, settings
 from project.tools import hydra_to_pydantic, pprint_config
 
 if TYPE_CHECKING:
@@ -34,7 +34,7 @@ class ExperimentConfig(pydantic_settings.BaseSettings):
     model_config = pydantic_settings.SettingsConfigDict(extra="ignore", frozen=True, arbitrary_types_allowed=True)
 
 
-@hydra.main(version_base="1.3", config_path=str(settings.PROJECT_DIR / "configs"), config_name="train_config")
+@hydra.main(version_base="1.3", config_path=str(PROJECT_DIR / "configs"), config_name="train_config")
 def run(cfg: DictConfig) -> None:
     """Run training loop."""
     config: ExperimentConfig = hydra_to_pydantic(cfg, ExperimentConfig)
