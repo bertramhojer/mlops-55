@@ -3,6 +3,7 @@ from pathlib import Path
 import pydantic
 import pydantic_settings
 import torch
+import loguru
 
 
 class ProjectSettings(pydantic_settings.BaseSettings):
