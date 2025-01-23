@@ -54,7 +54,7 @@ def main(file: str = "mmlu-balanced") -> None:
     """Compute dataset statistics."""
     _, dataset = load_from_dvc(file=file)
     dataset["train"] = datasets.Dataset.from_list(
-        dataset["train"]["train"]
+        dataset["train"]
     )  # This line seems fine if needed for your structure
 
     labels = {split: dset["answer"] for split, dset in dataset.items()}
