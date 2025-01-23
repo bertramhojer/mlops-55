@@ -1,3 +1,6 @@
+import logging
+import os
+import sys
 from contextlib import asynccontextmanager
 
 import fastapi
@@ -7,7 +10,13 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer
 
 import wandb
-from project.model import ModernBERTQA  # Make sure this import works
+from project.model import ModernBERTQA
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
 
 
 class Registry:
@@ -40,34 +49,64 @@ registry = Registry()
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
     """Lifespan for the FastAPI app."""
-    print("Starting up...")
+    try:
+        logger.info("Starting up application...")
 
-    # Initialize wandb in disabled mode (we just need to access artifacts)
-    wandb.init(mode="disabled")
+        # Get environment variables
+        wandb_api_key = os.getenv("WANDB_API_KEY")
+        wandb_entity = os.getenv("WANDB_ENTITY")
+        wandb_project = os.getenv("WANDB_PROJECT")
 
-    # Get the artifact
-    api = wandb.Api()
-    artifact = api.artifact("mlops_55/ModernBERTQA/model-jvz6josi:v0", type="model")
-    artifact_dir = artifact.download()
+        if not all([wandb_api_key, wandb_entity, wandb_project]):
+            msg = "Missing required wandb environment variables"
+            raise ValueError(msg)
 
-    # Load model and tokenizer
-    registry.model = ModernBERTQA(
-        model_name="answerdotai/ModernBERT-base", optimizer_cls=torch.optim.Adam, optimizer_params={"lr": 1e-5}
-    )
+        logger.info("Initializing wandb...")
+        # Initialize wandb with explicit settings
+        wandb.login()
+        wandb.init(mode="disabled")
 
-    # Load the checkpoint
-    checkpoint = torch.load(f"{artifact_dir}/model.ckpt", map_location="cpu", weights_only=False)
-    registry.model.load_state_dict(checkpoint["state_dict"])
+        # Get the artifact
+        logger.info("Fetching wandb artifact...")
+        try:
+            api = wandb.Api()
+            artifact = api.artifact(f"{wandb_entity}/ModernBERTQA/model-jvz6josi:v0", type="model")
+            artifact_dir = artifact.download()
+            logger.info(f"Artifact downloaded to {artifact_dir}")
+        except Exception as e:
+            logger.error(f"Error downloading artifact: {str(e)}")
+            raise
 
-    registry.tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
-    registry.model.eval()
-    print("Model loaded successfully")
+        # Load model and tokenizer
+        logger.info("Loading model...")
+        registry.model = ModernBERTQA(
+            model_name="answerdotai/ModernBERT-base", optimizer_cls=torch.optim.Adam, optimizer_params={"lr": 1e-5}
+        )
 
-    yield
+        # Load the checkpoint
+        logger.info("Loading checkpoint...")
+        checkpoint_path = os.path.join(artifact_dir, "model.ckpt")
+        if not os.path.exists(checkpoint_path):
+            msg = "Checkpoint not found"
+            raise FileNotFoundError(msg)
 
-    del registry.model
-    del registry.tokenizer
-    print("Shutting down...")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        registry.model.load_state_dict(checkpoint["state_dict"])
+
+        logger.info("Loading tokenizer...")
+        registry.tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
+        registry.model.eval()
+        logger.info("Startup complete - Model loaded successfully")
+
+        yield
+
+        logger.info("Shutting down...")
+        del registry.model
+        del registry.tokenizer
+
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}", exc_info=True)
+        raise
 
 
 app = fastapi.FastAPI(
@@ -120,4 +159,4 @@ def predict(request: PredictionRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")  # noqa: S104

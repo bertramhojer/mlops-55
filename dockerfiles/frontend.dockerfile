@@ -1,31 +1,39 @@
+# Use Python 3.12 slim as base image
 FROM python:3.12-slim AS base
 
-# Copy UV from the first stage
+# Copy UV binary from its official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc git supervisor && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    gcc \
+    git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /app
+# Set working directory
 WORKDIR /app
 
-# Copy the entire project first
+# Copy project files
 COPY . .
 
-# Install dependencies and add the virtual environment's bin to PATH
-RUN uv sync --group frontend --group api && \
-    echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc && \
-    echo 'PATH=/app/.venv/bin:$PATH' >> /etc/profile
+# Install dependencies using uv
+RUN uv sync --group deployment && \
+    echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc
 
 # Set PATH for the current build stage
 ENV PATH=/app/.venv/bin:$PATH
 
-# Copy the supervisord configuration file
-COPY dockerfiles/supervisord.conf /app/supervisord.conf
+# Add src to PYTHONPATH
+ENV PYTHONPATH=/app/src:$PYTHONPATH
 
-# Expose the ports for FastAPI and Streamlit
-EXPOSE 8000 8501
+# Expose the Streamlit port
+EXPOSE 8501
 
-# Command to run supervisord
-CMD ["supervisord", "-c", "/app/supervisord.conf"]
+# Set environment variable for the API URL
+ENV API_URL=http://modernbert-api:8000
+
+# Command to run the application
+CMD ["streamlit", "run", "src/project/frontend.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
