@@ -10,9 +10,9 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 from loguru import logger
 from omegaconf import DictConfig
-import wandb
 
 import hydra
+import wandb
 from project.collate import collate_fn
 from project.configs import DatasetConfig, OptimizerConfig, TrainConfig
 from project.data import load_from_dvc
@@ -127,15 +127,15 @@ def run_train(config: ExperimentConfig):
     with open(f"{config.train.output_dir}/metadata.json", "w") as f:
         metadata = {"best_model_file": checkpoint_callback.best_model_path, "wandb_run_id": wandb_logger.experiment.id}
         json.dump(metadata, f)
-    
-    if checkpoint_callback.best_model_path:  
+
+    if checkpoint_callback.best_model_path:
         artifact = wandb.Artifact(
-            name=f"model-{wandb_logger.experiment.id}",  
+            name=f"model-{wandb_logger.experiment.id}",
             type="model",  # Type of artifact
             description="Trained model checkpoint",
         )
-        artifact.add_file(checkpoint_callback.best_model_path)  
-        wandb_logger.experiment.log_artifact(artifact) 
+        artifact.add_file(checkpoint_callback.best_model_path)
+        wandb_logger.experiment.log_artifact(artifact)
         logger.info(f"Logged model checkpoint as artifact: {checkpoint_callback.best_model_path}")
     else:
         logger.warning("No model checkpoint found. Skipping artifact upload.")

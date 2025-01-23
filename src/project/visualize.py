@@ -49,12 +49,12 @@ def histogram_bar_chart(data: dict[str, Counter]):
     return fig
 
 def render_examples(example):
-    """Display example Question and Answer"""
+    """Display example Question and Answer."""
     print("## Example Question")
     print()
     print(f"{example['question']}")
     print()
-    for _, choice in enumerate(example['choices']):
+    for _, choice in enumerate(example["choices"]):
         print(f"- {choice}")
     print()
     print(f"**Answer**: {example['choices'][example['answer']]}")
