@@ -1,6 +1,5 @@
 from collections import Counter
 
-import datasets
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -53,10 +52,6 @@ def histogram_bar_chart(data: dict[str, Counter]):
 def main(file: str = "mmlu") -> None:
     """Compute dataset statistics."""
     _, dataset = load_from_dvc(file=file)
-    dataset["train"] = datasets.Dataset.from_list(
-        dataset["train"]["train"]
-    )  # This line seems fine if needed for your structure
-
     labels = {split: dset["answer"] for split, dset in dataset.items()}
     # Rest of your code remains the same
     splits = list(dataset.keys())
