@@ -2,7 +2,6 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-from transformers import AutoTokenizer
 import seaborn as sns
 import typer
 
@@ -59,6 +58,7 @@ def render_examples(example):
         print(f"- {choice}")
     print()
     print(f"**Answer**: {example['choices'][example['answer']]}")
+    print()
 
 
 def main(file: str = "mmlu") -> None:

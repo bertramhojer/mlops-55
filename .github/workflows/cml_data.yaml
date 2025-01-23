@@ -37,7 +37,7 @@ jobs:
 
     - name: Pull data
       run: |
-        dvc pull --no-run-cache data/raw/mmlu-balanced/ data/processed/mmlu-balanced/ || true
+        dvc pull --no-run-cache || true
 
     - name: Check data statistics & generate report
       run: |
@@ -51,4 +51,4 @@ jobs:
       env:
         REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        cml comment create data_overview.md --watermark-title="Data Checker" # (1)!
+        cml comment create data_statistics.md --watermark-title="Data Checker" # (1)!

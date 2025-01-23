@@ -3,7 +3,6 @@ from pathlib import Path
 import pydantic
 import pydantic_settings
 import torch
-from loguru import logger
 
 PROJECT_DIR: Path = Path(__file__).parent.parent.parent
 
