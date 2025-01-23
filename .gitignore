@@ -5,7 +5,7 @@ manual_test/
 # other local dev info
 .vscode/
 
-# wandb
+#wandb
 wandb/
 artifacts/
 

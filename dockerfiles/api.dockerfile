@@ -1,17 +1,45 @@
-# Change from latest to a specific version if your requirements.txt
+# Use Python 3.12 slim as base image
 FROM python:3.12-slim AS base
 
-RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# Copy UV binary from its official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY src src/
-COPY requirements.txt requirements.txt
-COPY requirements_dev.txt requirements_dev.txt
-COPY README.md README.md
-COPY pyproject.toml pyproject.toml
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    gcc \
+    git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install -r requirements.txt --no-cache-dir --verbose
-RUN pip install . --no-deps --no-cache-dir --verbose
+# Set working directory
+WORKDIR /app
 
-ENTRYPOINT ["uvicorn", "src/project/api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy project files
+COPY . .
+
+# Install dependencies using uv
+RUN uv sync --group api && \
+    echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc
+
+# Set PATH for the current build stage
+ENV PATH=/app/.venv/bin:$PATH
+
+# Add src to PYTHONPATH
+ENV PYTHONPATH=/app/src:$PYTHONPATH
+
+# Set Python to run in unbuffered mode
+ENV PYTHONUNBUFFERED=1
+
+# Create directory for wandb cache
+RUN mkdir -p /root/.cache/wandb
+
+# Set default port (can be overridden)
+ENV PORT=8000
+
+# Expose the port
+EXPOSE ${PORT}
+
+# Command to run the application
+CMD uvicorn project.api:app --host 0.0.0.0 --port ${PORT} --log-level debug

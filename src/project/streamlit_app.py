@@ -1,8 +1,12 @@
+import os
+
 import requests
 import streamlit as st
 
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000)")
+
 # Set the title of the Streamlit app
-st.title("Multiple Choice Prediction")
+st.title("ModernBERT Prediction")
 
 # Input for the query
 query = st.text_input("Enter your query:")
@@ -23,16 +27,16 @@ if st.button("Predict"):
         payload = {"query": query, "choices": choices_list}
 
         # Send the request to the FastAPI endpoint
-        response = requests.post("http://127.0.0.1:8000/predict", json=payload, timeout=5)
+        response = requests.post(f"{API_URL}/predict", json=payload, timeout=5)
 
         if response.status_code == 200:
             result = response.json()
             q = f"Query: {query}"
             st.write(q)
-            st.write(result["choices"][0], round(result["predictions"][0], 3) * 100, "%")
-            st.write(result["choices"][1], round(result["predictions"][1], 3) * 100, "%")
-            st.write(result["choices"][2], round(result["predictions"][2], 3) * 100, "%")
-            st.write(result["choices"][3], round(result["predictions"][3], 3) * 100, "%")
+            st.write(result["choices"][0], round(result["predictions"][0], 2) * 100, "%")
+            st.write(result["choices"][1], round(result["predictions"][1], 2) * 100, "%")
+            st.write(result["choices"][2], round(result["predictions"][2], 2) * 100, "%")
+            st.write(result["choices"][3], round(result["predictions"][3], 2) * 100, "%")
         else:
             st.error("Error: " + response.text)
     else:
