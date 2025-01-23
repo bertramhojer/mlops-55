@@ -37,7 +37,7 @@ jobs:
 
     - name: Pull data
       run: |
-        dvc pull --no-run-cache || true
+        dvc pull --no-run-cache data/raw/mmlu-balanced/ data/processed/mmlu-balanced/ || true
 
     - name: Check data statistics
       run: |
