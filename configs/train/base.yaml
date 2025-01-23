@@ -1,6 +1,6 @@
 seed: 42
 model_name: "answerdotai/ModernBERT-base"
-device: "cpu"
+device: "auto"
 epochs: 10
 batch_size: 32
 eval_batch_size: 8
@@ -8,5 +8,3 @@ output_dir: "models/exp1"
 monitor: "val/loss"
 mode: "min"
 patience: 5
-n_train_samples: 800
-n_val_samples: 200

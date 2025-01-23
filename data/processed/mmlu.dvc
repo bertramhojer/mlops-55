@@ -2,6 +2,18 @@ outs:
 - hash: md5
   path: mmlu
   files:
+  - relpath: dataset_dict.json
+    md5: d891fc9df4ce897bcacc398f78aea2ff
+    size: 43
+  - relpath: test/data-00000-of-00001.arrow
+    md5: 502330be52bb9b13afe4eef1acd0cb13
+    size: 144709496
+  - relpath: test/dataset_info.json
+    md5: 50436e6b084ed097ae5165ca4d7e5133
+    size: 434
+  - relpath: test/state.json
+    md5: 7b7b2a829228ff368869111a48fa2a8d
+    size: 247
   - relpath: train/data-00000-of-00001.arrow
     md5: 986f8b9b6684294b5eb3b11e236cd7d9
     size: 103054744
@@ -9,6 +21,9 @@ outs:
       remote_storage:
         etag: 08bcd6ffbed4868b031001
         version_id: '1737457211009852'
+  - relpath: train/dataset_info.json
+    md5: 50436e6b084ed097ae5165ca4d7e5133
+    size: 434
   - relpath: train/state.json
     md5: 0692b8cf7ca75af2cb0edd8e65fb7d43
     size: 247
@@ -16,3 +31,12 @@ outs:
       remote_storage:
         etag: 08c5b887bfd4868b031001
         version_id: '1737457211137093'
+  - relpath: validation/data-00000-of-00001.arrow
+    md5: 4d26b7c89156270900d106812d2ccba5
+    size: 15778552
+  - relpath: validation/dataset_info.json
+    md5: 50436e6b084ed097ae5165ca4d7e5133
+    size: 434
+  - relpath: validation/state.json
+    md5: e43f85af25616acc3294eb47f2cf4a00
+    size: 247
