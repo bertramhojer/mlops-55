@@ -36,7 +36,13 @@ def test_post_forward_shape(optimizer_cls: Optimizer, optimizer_params: dict[str
     labels = torch.randint(0, BINARY_CLS, (BATCH_SIZE,))
     attention_mask = torch.ones_like(input_ids)
     output: SequenceClassifierOutput = typing.cast(
-        SequenceClassifierOutput, model.forward(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        SequenceClassifierOutput, model.forward(
+            {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+                "labels": labels,
+            }
+        )
     )
     check.is_instance(output.logits, torch.Tensor, "Output should be a tensor")
     check.equal(

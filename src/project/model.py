@@ -2,6 +2,7 @@ import typing
 
 import lightning as l
 import torch
+from loguru import logger
 from transformers import AutoModelForSequenceClassification
 
 
@@ -11,8 +12,8 @@ class ModernBERTQA(l.LightningModule):
     def __init__(
         self,
         model_name: str,
-        optimizer_cls: type[torch.optim.Optimizer],
-        optimizer_params: dict[str, typing.Any],
+        optimizer_cls: type[torch.optim.Optimizer] | None = None,
+        optimizer_params: dict[str, typing.Any] | None = None,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -21,9 +22,12 @@ class ModernBERTQA(l.LightningModule):
             num_labels=2,
             problem_type="single_label_classification",
         )
-        self.optimizer_cls = optimizer_cls
-        self.optimizer_params = optimizer_params
-        self._validate_optimizer()
+        if not optimizer_cls:
+            logger.warning("Optimizer class is not provided, model will not be trainable.")
+        else:
+            self.optimizer_cls = optimizer_cls
+            self.optimizer_params = optimizer_params
+            self._validate_optimizer()
 
     def _validate_optimizer(self):
         """Validate optimizer parameters fits with optimizer class."""
@@ -33,9 +37,14 @@ class ModernBERTQA(l.LightningModule):
             msg = f"Optimizer parameters are not compatible with optimizer class: {e}"
             raise ValueError(msg) from e
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    def forward(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         """Forward pass of the model."""
-        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        return self.model(
+            input_ids=batch["input_ids"],
+            attention_mask=batch["attention_mask"],
+            labels=batch["labels"],
+            output_hidden_states=True,
+        )
 
     def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         """Training step of the model."""
