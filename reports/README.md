@@ -93,7 +93,7 @@ will check the repositories and the code to verify your answers.
 
 ### Week 3
 
-* [ ] Check how robust your model is towards data drifting (M27)
+* [x] Check how robust your model is towards data drifting (M27)
 * [ ] Deploy to the cloud a drift detection API (M27)
 * [x] Instrument your API with a couple of system metrics (M28)
 * [ ] Setup cloud monitoring of your instrumented application (M28)
@@ -223,7 +223,7 @@ We additionally implemented pre-commit checks to ensure that new code passed che
 >
 > Answer:
 
-We have implemented 18 tests in total, and cover approximately 50% of our project. These tests test the API endpoints, model training configurations, frontend interactions, model behavior, and data preprocessing functions. They cover critical parts of our application, including tensor manipulation, configuration validation, service communication, model training steps, and data handling processes. 
+We have implemented 18 tests in total. These tests include testing the API endpoints, model training configurations, frontend interactions, model behavior, and data preprocessing functions. They cover some of the most critical parts of our application, including tensor manipulation, configuration validation, service communication, model training steps, and data handling processes.
 
 ### Question 8
 
@@ -348,9 +348,16 @@ This command retrieves the exact configuration used in the original experiment, 
 >
 > Answer:
 
---- question 14 fill here —
-The first image is a screenshot of the loss graphs, 
-(screenshot of loss graphs, sweep information, and metrics table) 
+![Wandb-1](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/wandb_1.png)
+The first image is a screenshot of example loss graphs. These graphs inform us if the model performance is improving throughout the training, if overfitting is occurring (seen as a reduction in validation performance as the train loss continues decreasing), and can offer other clues about what may be going on in the training process, which can assist with troubleshooting. For example, the noisy but relatively linear training loss curve indicates that the model is not learning from the data, and further model testing and development is needed to determine if there is an issue with the model or the data.
+
+![Wandb-2](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/wandb_2.png)
+The second image is a screenshot of the changing parameters from a W&B sweep, where we tested a variety of hyperparameters including optimizer type, learning rate, and batch size, which are important for model optimization. The sweep used Bayesian optimization, which utilizes the information from earlier sweep runs to select the next model’s hyperparameters and achieve our goal (minimize validation loss). As the models were not achieving strong performance, there was unfortunately limited value in performing the sweep at this time.
+
+![Wandb-3](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/wandb_3.png)
+The third screenshot shows some testing metrics that have been measured and recorded. This includes a confusion matrix, which tells us how well a model is about to identify each class correctly/incorrectly, and a table including several traditional classification metrics, which indicate how well the model performs and generalizes to the test set. 
+
+All wandb results can be found at: https://wandb.ai/mlops_55 
 
 ### Question 15
 
@@ -387,9 +394,10 @@ Using Docker ensures that our applications run consistently across different env
 >
 > Answer:
 
-All group members employed the standard VS Code debugger (or Cursor, a fork of VS Code) for debugging code. We did not do any profiling during development but did a single profiling run of our code at the end. This profiling run showed —-
+All group members employed the standard VS Code debugger (or Cursor, a fork of VS Code) for debugging code. We did not do any profiling during development of our code, but doing so would have been valuable for identifying performance bottlenecks and optimizing resource usage. This is especially true as some of us had limited access to computational resources, and ran out of memory when training bigger models or using larger batch sizes. 
 
-Debugging locally was easy, but we ran into issues when attempting to debug code when deploying to the cloud. As we worked on training models using GCP (Engine & Vertex AI) we ran into a lot issues regarding permissions and correct use of various environment variables even though we attempted to use secrets to store said variables. This debugging was slow because it often involved building and pushing docker images and running them in the cloud to debug them.
+Debugging locally was easy, but we ran into issues when attempting to debug code when deploying to the cloud. As we worked on training models using GCP (Engine & Vertex AI) we ran into a lot of issues regarding permissions and correct use of various environment variables even though we attempted to use secrets to store said variables. This debugging was slow because it often involved building and pushing docker images and running them in the cloud to debug them.
+
 
 
 ## Working in the cloud
@@ -548,9 +556,10 @@ We could have used a tool like Locust to simulate multiple concurrent users for 
 >
 > Answer:
 
-We did not manage to implement any monitoring of the deployed model. However, we recognize the importance of monitoring and how it affects the reliability of a deployed machine-learning application. We could have used a framework such as Evidently to monitor data drift. However, our use case and setup require slightly different tools because we work within the natural language processing domain. 
+We did not implement monitoring of the deployed model, in terms of measuring model decay over time. This is because our project was within the natural language processing domain, and we used a single dataset. To modify this task, we implemented monitoring for data drift between our training and test sets using Evidently and some parts of this tutorial. More specifically, we obtained the hidden states from both datasets using the deployed model, pooled them with attention masks to get full sentence embeddings, and assessed drift detection by testing whether a binary classifier could successfully determine each datapoint’s original dataset. This allowed us to evaluate how well the model generalized embeddings across data (sub)sets.
 
-To properly monitor the data inputted by our potential users, we would do some form of analysis, e.g., the type of questions or the general length, and additionally monitor metrics such as prediction accuracy. This could provide valuable insights into how well the model performs in a deployment scenario. This would require logging all questions asked to the model and relying on user feedback to log if the model started answering incorrectly. One way to monitor data drift in our situation would be to have another backend process that attempted to classify the topic of questions and monitor if the type of questions users asked changed over time. One could then implement a new training run with an updated dataset if the use case for the application started drifting (as measured via data drift).
+However, this implementation does not directly monitor the deployed model or real-time production data. To do this, we would need to use the same drift reporting process to compare new datasets against ours.
+
 
 ## Overall discussion of project
 
@@ -637,10 +646,16 @@ In summary, our workflow ensures integration between local development and cloud
 > Answer:
 
 We faced a lot of challenges throughout the course in general and the development of our project. As Nicki mentioned in his final lecture data processing is a major hurdle that wasn’t really covered in this course and that isn’t part of the standard MLOps diagram, it is however something we spent a lot of time on. 
+
+On a related note, our results indicate that the model is not learning from the data properly, and the loss does not improve during the training process. This may be due to many things. For example, the dataset includes a wide variety of subject matters, which may not have been represented fairly in the splits. Further investigation and troubleshooting of both the model and the dataset was needed, but not prioritized, as this course was intended to practice the implementation and usage of MLOps tools. 
 We additionally spent quite a lot of time trying to get training working using GCP. We couldn't access GPUs on Vertex AI despite approved quotas, forcing us to switch to HPC infrastructure. We also struggled with GCP bucket permissions when writing model artifacts, which required careful IAM policy configuration.
+
 We also attempted to do proper data versioning with DVC, but that ended up presenting us with more challenges than it did us favors. Establishing consistent versioning protocols and remote storage configurations took considerable effort to standardize and in the end we are not certain we got it working properly.
+
 Ensuring compatibility between the different components developed by contributors was also quite a challenge. We are referring to components such as preprocessing, model training and e.g. the frontend application. While docker helped us standardize development environments (via e.g. the use of a devcontainer) and we used uv to manage our environment and dependencies in general we still ran into a lot of issues.
+
 We tried to integrate various continuous integration workflows such as the ones described in Q11, but we still ran into a lot of issues. This has highlighted the need to spend a lot of time preparing and designing a project or an application before the actual coding begins. We are painfully aware that using a more test-driven development approach where it is clearly defined what our program must be capable of before starting development would have been incredibly useful.
+
 
 
 ### Question 31
@@ -665,5 +680,3 @@ Student s250393 was in charge of setting up the github repository and the cookie
 Student s251116 developed aspects of the training script and all evaluation/visualization and logging (including WANDB logging and model sweeps). They also implemented coverage calculations, continuous workflow, and data drifting functionality. 
 
 All code was developed in a collaborative manner, including bug bashing and additional list items not mentioned, such that every group member has an idea of how every component of the entire pipeline works. The above contribution statement is thus just an indicator of who was the primus motor for the specified parts of the project.
-
-
