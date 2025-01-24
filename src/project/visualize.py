@@ -48,6 +48,18 @@ def histogram_bar_chart(data: dict[str, Counter]):
     fig.tight_layout()
     return fig
 
+def render_examples(example):
+    """Display example Question and Answer."""
+    print("## Example Question")
+    print()
+    print(f"{example['question']}")
+    print()
+    for _, choice in enumerate(example["choices"]):
+        print(f"- {choice}")
+    print()
+    print(f"**Answer**: {example['choices'][example['answer']]}")
+    print()
+
 
 def main(file: str = "mmlu") -> None:
     """Compute dataset statistics."""
@@ -56,10 +68,12 @@ def main(file: str = "mmlu") -> None:
     # Rest of your code remains the same
     splits = list(dataset.keys())
     labels_count = {split: Counter(lst) for split, lst in labels.items()}
+    render_examples(dataset["train"][0])
 
     labels_chart = grouped_bar_chart(labels_count)
     labels_chart.savefig("labels_count.png")
     plt.close()
+
 
 
 if __name__ == "__main__":
