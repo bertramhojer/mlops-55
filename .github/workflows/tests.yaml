@@ -5,34 +5,36 @@ on:
     branches:
       - main
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
       - main
+      - dev
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.12"]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: '3.12'
+          version: "0.5.13"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
-      - name: Install dependencies
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install -r requirements.txt
+      - name: Install the project
+        run: uv sync --extra train --extra deployment
 
       - name: Run tests
-        run: |
-          . .venv/bin/activate
-          uv run coverage run --source=src/ -m pytest
+        run: uv run coverage run --source=src/ -m pytest
 
-      - name: Upload coverage report
+      - name: Generate coverage report
         run: |
           echo '## Code Coverage Report' >> cov.md
           uv run coverage report -m --format="markdown" >> cov.md
@@ -54,5 +56,4 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: 'cov.md'
           token: ${{ secrets.GITHUB_TOKEN }}
-          repository: bertramhojer/mlops-55
-          direction: first
+          edit-mode: replace
