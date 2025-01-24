@@ -5,7 +5,6 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened]
     branches:
       - main
 
@@ -38,26 +37,6 @@ jobs:
           echo '## Code Coverage Report' >> cov.md
           uv run coverage report -m --format="markdown" >> cov.md
 
-<<<<<<< Updated upstream
-      - name: Create a coverage comment
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const coverageReport = fs.readFileSync('cov.md', 'utf8');
-            github.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: coverageReport,
-            });
-
-      - name: Find coverage comment
-        uses: peter-evans/find-comment@v3
-        with:
-          comment-author: github-actions[bot]
-          body-includes: Coverage
-=======
       - name: Find Comment
         if: github.event.pull_request
         uses: peter-evans/find-comment@v3
@@ -74,7 +53,6 @@ jobs:
           comment-id: ${{ steps.fc.outputs.comment-id || '' }}
           issue-number: ${{ github.event.pull_request.number }}
           body-path: 'cov.md'
->>>>>>> Stashed changes
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: bertramhojer/mlops-55
           direction: first
