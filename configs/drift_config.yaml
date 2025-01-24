@@ -1,0 +1,5 @@
+batch_size: 128
+model_name: "answerdotai/ModernBERT-base"
+file_name: "mmlu"
+n_train_samples: 10000
+n_test_samples: 10000

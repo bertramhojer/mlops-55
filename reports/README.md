@@ -80,12 +80,12 @@ will check the repositories and the code to verify your answers.
 * [x] Add a linting step to your continuous integration (M17)
 * [x] Add pre-commit hooks to your version control setup (M18)
 * [x] Add a continues workflow that triggers when data changes (M19)
-* [(x)] Add a continues workflow that triggers when changes to the model registry is made (M19)
+* [ ] Add a continues workflow that triggers when changes to the model registry is made (M19)
 * [x] Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)
 * [ ] Create a trigger workflow for automatically building your docker images (M21)
-* [(x)] Get your model training in GCP using either the Engine or Vertex AI (M21)
+* [x] Get your model training in GCP using either the Engine or Vertex AI (M21)
 * [x] Create a FastAPI application that can do inference using your model (M22)
-* [(x)] Deploy your model in GCP using either Functions or Run as the backend (M23)
+* [x] Deploy your model in GCP using either Functions or Run as the backend (M23)
 * [x] Write API tests for your application and setup continues integration for these (M24)
 * [ ] Load test your application (M24)
 * [ ] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)
@@ -95,11 +95,11 @@ will check the repositories and the code to verify your answers.
 
 * [ ] Check how robust your model is towards data drifting (M27)
 * [ ] Deploy to the cloud a drift detection API (M27)
-* [-] Instrument your API with a couple of system metrics (M28)
-* [-] Setup cloud monitoring of your instrumented application (M28)
-* [-] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
-* [ ] If applicable, optimize the performance of your data loading using distributed data loading (M29)
-* [ ] If applicable, optimize the performance of your training pipeline by using distributed training (M30)
+* [x] Instrument your API with a couple of system metrics (M28)
+* [ ] Setup cloud monitoring of your instrumented application (M28)
+* [ ] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
+* [x] If applicable, optimize the performance of your data loading using distributed data loading (M29)
+* [x] If applicable, optimize the performance of your training pipeline by using distributed training (M30)
 * [ ] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
 
 ### Extra
@@ -107,7 +107,7 @@ will check the repositories and the code to verify your answers.
 * [ ] Write some documentation for your application (M32)
 * [ ] Publish the documentation to GitHub Pages (M32)
 * [ ] Revisit your initial project description. Did the project turn out as you wanted?
-* [(x)] Create an architectural diagram over your MLOps pipeline
+* [x] Create an architectural diagram over your MLOps pipeline
 * [x] Make sure all group members have an understanding about all parts of the project
 * [x] Uploaded all your code to GitHub
 
@@ -188,6 +188,7 @@ This approach ensures consistency, avoids compatibility issues, and provides a s
 > Answer:
 
 We initialized the repository using the MLOps cookie-cutter template developed by Nicki. As described previously, we decided to use uv instead of requirement files. We have added a .dvc file with a config file for data versioning with pointers to the GCP bucket that holds our preprocessed dataset. We have also removed the tasks.py and instead specify project scripts in the pyproject.toml which is compatible with uv. Using uv ensures the environment is always correctly set up when running defined scripts.
+Other than that the general project structure is the same as illustrated by the README.md file. We use the src/project structure where all components are developed in the project folder. Dockerfiles are in /dockerfiles, all dependencies are handled using uv and the pyproject.toml in the root of the project.
 
 ### Question 6
 
@@ -203,7 +204,7 @@ We initialized the repository using the MLOps cookie-cutter template developed b
 > Answer:
 
 We used Ruff for linting to ensure good-quality code and consistent formatting. Our pre-commit checks were set up not to allow commits if the files were not formatted correctly. The Ruff linter automatically enforces the use of docstrings for proper function documentation. We generally used type-hints throughout the code and have used Pydantic for specific modules, improving the readability of the code. This is important for larger projects with multiple collaborators where many components are built by separate developers before being combined in the final application.
-We additionally implemented pre-commit checks to ensure that new code passed checks before being merged into the protected main branch. This is important as we could otherwise encounter compatibility issues between different components (given that the tests are correctly written).
+We additionally implemented pre-commit checks to ensure that new code passed checks before being merged into the protected main branch. This is important as we could otherwise encounter compatibility issues between different components (given that the tests are correctly written). And even though we took these precautions, we ran into a variety of compatibility issues, which was more likely due to the fact we did not create a clear enough project description before we started developing.
 
 ## Version control
 
@@ -222,7 +223,7 @@ We additionally implemented pre-commit checks to ensure that new code passed che
 >
 > Answer:
 
-We used ‘pytest’ for all testing implemented in our project. In total, we have implemented __ tests. We primarily test the data processing to ensure the correct data types are used. We initially ran into various issues with the data formatting. Still, the tests now ensure proper formatting and that the dataset (when created and loaded using DVC) is in the expected format. We also test our model training and inference and simple API tests.
+We have implemented 18 tests in total, and cover approximately 50% of our project. These tests test the API endpoints, model training configurations, frontend interactions, model behavior, and data preprocessing functions. They cover critical parts of our application, including tensor manipulation, configuration validation, service communication, model training steps, and data handling processes. 
 
 ### Question 8
 
@@ -237,9 +238,9 @@ We used ‘pytest’ for all testing implemented in our project. In total, we ha
 >
 > Answer:
 
-Whenever a PR is/was made to the main branch, we generate a code coverage report. The total code coverage at the latest PR to main is __. 
+Whenever a push was made to the main branch, or a pull request was made to main or dev, we generated a code coverage report. The total code coverage at the latest PR to main is 35%. While we do not have 100% coverage of our code (and that coverage is really quite low), our tests cover some of the most critical parts of our project, including the model and training functions. Further coverage could be implemented with the addition of more tests, especially for inference and data processing. 
 
-We do not have 100% coverage of our code, but our tests cover the most critical parts of our project, such as data processing, model training, and inference. Even if one had developed tests such that one achieved code coverage of 100%, this still would not ensure any undesired bugs or implementation errors in the code.
+Even if one had developed tests such that one achieved code coverage of 100%, this still would not ensure any undesired bugs or implementation errors in the code. This is because bugs might exist outside the data and scenarios specifically tested. 
 
 ### Question 9
 
@@ -254,7 +255,7 @@ We do not have 100% coverage of our code, but our tests cover the most critical 
 >
 > Answer:
 
-We made use of branches and PRs in our projects. Our project was structured with a protected ‘main’ branch and an unprotected ‘dev’ branch from which we generated ‘feature’ branches whenever a new feature had to be developed. Each group member would then create a feature branch for features such as data preprocessing or model training and merge with the ‘dev’ branch. The ‘dev’ branch was occasionally merged with the ‘main’ branch. The ‘main’ branch protection required at least one reviewer before committing the code. We also implemented a GitHub workflow, ensuring that committed code passed all defined tests and printing dataset statistics if a new dataset was created.
+We made use of branches and PRs in our projects. Our project was structured with a protected ‘main’ branch and an unprotected ‘dev’ branch from which we generated ‘feature’ branches whenever a new feature had to be developed. Each group member would then create a feature branch for features such as data preprocessing or model training and merge with the ‘dev’ branch. The ‘dev’ branch was occasionally merged with the ‘main’ branch. The ‘main’ branch protection required at least one reviewer before merging the code. We also implemented a GitHub workflow, ensuring that committed code passed all defined tests and printing dataset statistics if a new dataset was created.
 
 ### Question 10
 
@@ -269,7 +270,7 @@ We made use of branches and PRs in our projects. Our project was structured with
 >
 > Answer:
 
-We used DVC in the data preprocessing component of our project, although we are working with a static dataset. It was primarily implemented, as the functionality would be good if one continued developing the application with more continuous machine learning in mind. As our project concerned fine-tuning a ModernBERT model on the MMLU dataset and creating a simple binary classifier based on that dataset, data-versioning is not a critical feature (as the dataset is static). If one were to continuously train the model with more (and newer) data-versioning, it would become a critical feature.
+We used DVC in the data preprocessing component of our project, although primarily as a proof-of-concept as we are working with a static dataset. It was primarily implemented, as the functionality would be good if one continued developing the application with more continuous machine learning in mind. As our project concerned fine-tuning a ModernBERT model on the MMLU dataset and creating a simple classifier based on that dataset, data-versioning is not a critical feature (as the dataset is static). If the project were to evolve into continuous learning with dynamic data streams, DVC would become essential for tracking dataset changes and their impact on model performance. For example, it would allow us to rollback to previous versions if new data introduced bias or degraded performance, compare model results across different dataset versions, and maintain reproducibility as the data evolves. DVC would also enable better collaboration by letting team members synchronize their local datasets with a remote storage while keeping the actual data separate from the Git repository. We did however struggle quite a lot with managing dvc caches and the creation and loading of old/newer datasets across machines.
 
 ### Question 11
 
@@ -307,15 +308,11 @@ Both workflows utilize caching to speed up dependency installation, enhancing ef
 >
 > Answer:
 
-We configured our experiments using uv, Hydra, and Typer. Hydra allows us to manage complex configurations easily, enabling us to define parameters in YAML files. For example, we can create the dataset with specific parameters in the following manner:
+We configured experiments using Hydra to manage configuration files and Pydantic for data validation, providing a flexible and robust setup. The configuration is defined in YAML files and loaded using Hydra, allowing easy management and version control of different experiment settings. Pydantic models validate and structure the configuration data, ensuring type safety. This setup allows for seamless integration of complex configurations and simplifies running experiments with different parameters. For example, we can run an experiment:
 ```python
-uv run python src/project/data.py create-dataset –subset-size 1000 –filepath mmlu
+uv run train experiment=exp1
 ```
-Or, we can run an experiment with specific parameters using a command like:
-```python
-uv run my_experiment.py --config-path=configs --config-name=experiment_config.yaml
-```
-Typer creates a user-friendly command-line interface in this setup, allowing us to pass parameters directly. This combination provides flexibility and clarity in managing our experiment configurations.
+Where exp1 is a yaml configuration in the experiment folder overriding training input arguments.
 
 ### Question 13
 
@@ -351,7 +348,9 @@ This command retrieves the exact configuration used in the original experiment, 
 >
 > Answer:
 
---- question 14 fill here ---
+--- question 14 fill here —
+The first image is a screenshot of the loss graphs, 
+(screenshot of loss graphs, sweep information, and metrics table) 
 
 ### Question 15
 
@@ -366,7 +365,14 @@ This command retrieves the exact configuration used in the original experiment, 
 >
 > Answer:
 
---- question 15 fill here ---
+For our project, we developed several Docker images to streamline our workflow, including:
+
+Dev Container: We use a dev container for a consistent development environment. This container can be run using Visual Studio Code's Remote Containers extension to ensure all team members have the same setup.
+Preprocessing Image: This image handles data preprocessing tasks, including dataset creation and DVC setup. It ensures that data is processed consistently and stored correctly in our cloud storage.
+API: The API image serves our machine learning models via a FastAPI application, allowing us to deploy them as scalable web services.
+Deployment images: we run the frontend applications, including FastAPI and Streamlit. They provide a user-friendly interface for interacting with our models and visualizing results. The API image serves our machine learning models via a FastAPI application, allowing us to deploy them as scalable web services, while the frontend image serves the Streamlit application.
+
+Using Docker ensures that our applications run consistently across different environments, making development, testing, and deployment more efficient. Docker containers encapsulate all dependencies, configurations, and code, reducing the "it works on my machine" problem and facilitating seamless collaboration.
 
 ### Question 16
 
@@ -382,7 +388,9 @@ This command retrieves the exact configuration used in the original experiment, 
 > Answer:
 
 All group members employed the standard VS Code debugger (or Cursor, a fork of VS Code) for debugging code. We did not do any profiling during development but did a single profiling run of our code at the end. This profiling run showed —-
-Profiling run summary
+
+Debugging locally was easy, but we ran into issues when attempting to debug code when deploying to the cloud. As we worked on training models using GCP (Engine & Vertex AI) we ran into a lot issues regarding permissions and correct use of various environment variables even though we attempted to use secrets to store said variables. This debugging was slow because it often involved building and pushing docker images and running them in the cloud to debug them.
+
 
 ## Working in the cloud
 
@@ -399,7 +407,7 @@ Profiling run summary
 >
 > Answer:
 
-In our project, we used the Engine and Bucket services from GCP. We used Bucket and DVC to store two versions of each dataset, raw and processed. The raw data was used to create dataset statistics, and the processed data was used to train the actual model. Our data preprocessing script automatically preprocesses data and pushes tit o DVC and the defined GCP Bucket. We used the Compute Engine to train our models. Unfortunately (after many tries), we could not access an instance with available GPUs. Still, we implemented the pipeline to train a model using CPU on the Compute Engine. 
+In our project, we mainly used the GCP Bucket and Cloud Run (and partially a basic Compute Engine VM Instance). We used Bucket and DVC to store versions of each dataset, raw and processed. The raw data was used to create dataset statistics, and the processed data was used to train the actual model. Our data preprocessing script automatically preprocesses data and pushes it to DVC and the defined GCP Bucket. We attempted to use Vertex AI for model training, but could not successfully get our models training there due to GPU limitations. We instead opted to train our model using a distributed approach on an HPC to which we had access.  Still, we implemented the pipeline to train a model using CPU on the Compute Engine (which was rather slow). We also deployed a very simple Cloud Run application using FastAPI and Streamlit which loaded a model from our Weights and Biases model registry to be used by an end-user.
 
 ### Question 18
 
@@ -414,17 +422,9 @@ In our project, we used the Engine and Bucket services from GCP. We used Bucket 
 >
 > Answer:
 
-We used the GCP Compute Engine to run our model training. We used instance with the following hardware specifications:
-Location
-Machine
-GPU
-The instance was instantiated using a custom container that automatically ran the training script and saved the model weights locally and to Weights & Biases. As we couldn’t access a GPU, this wasn’t the optimal setup, but we deemed it valuable to implement the pipeline using the CPU anyway.
+As explained in Q17, we initially attempted to use the GCP Compute Engine for model training, but ultimately opted for an HPC due to GCP compute limitations. However, we successfully used the Compute Engine for our initial application deployment before transitioning to Cloud Run.
 
-We additionally used a VM instance to run the backend of our application. For this, we used an instance with the following specifications:
-Location
-Machine
-GPU
-This instance was also spun up using a custom docker file. See the docker file here.
+Our deployment architecture employed supervisord to orchestrate multiple containers within a single VM instance, enabling the use of the FastAPI backend and Streamlit frontend services. This setup provided a cost-effective solution for our proof-of-concept phase, as the e2-medium instance offered a balanced compromise between performance and resource allocation. The use of supervisord simplified our container management by allowing us to define and control multiple processes through a single configuration file, eliminating the need for complex container orchestration solutions like Kubernetes for our initial deployment. We transitioned to using Cloud Run as this was a better fit for the simple application we deployed and is a pay-by-use solution.
 
 ### Question 19
 
@@ -433,8 +433,8 @@ This instance was also spun up using a custom docker file. See the docker file h
 >
 > Answer:
 
-Our GCP bucket contains versions of our dataset. In data.py you can call the load_from_dvc(file) function with e.g. file = ‘mmlu’ which will load a datasetConfig with a train, validation and test split of the preprocessed MMLU dataset.
-GCP Bucket (https://console.cloud.google.com/storage/browser/mlops-55-bucket;tab=objects?forceOnBucketsSortingFiltering=true&inv=1&invt=AbncTg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project&prefix=&forceOnObjectsSortingFiltering=false)
+Our GCP bucket contains versions of our dataset. In data.py you can call the load_from_dvc(file) function with e.g. file = ‘mmlu’ which will load a datasetConfig with a train, validation and test split of the preprocessed MMLU dataset (or use the dockerfile for building a training image).
+![GCP Bucket](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/gcp-bucket.png)
 
 
 
@@ -445,7 +445,7 @@ GCP Bucket (https://console.cloud.google.com/storage/browser/mlops-55-bucket;tab
 >
 > Answer:
 
-Artifact Registry (https://console.cloud.google.com/artifacts/docker/flash-rock-447808-n2/europe-north1/mlops-55?inv=1&invt=AbncRg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project)
+![Artifact Registry](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/registry.png)
 
 
 ### Question 21
@@ -455,7 +455,7 @@ Artifact Registry (https://console.cloud.google.com/artifacts/docker/flash-rock-
 >
 > Answer:
 
-Cloud Build History (https://console.cloud.google.com/cloud-build/builds?referrer=search&inv=1&invt=AbncRg&orgonly=true&project=flash-rock-447808-n2&supportedpurview=project)
+![Cloud Build History](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/cloud-build.png)
 
 
 ### Question 22
@@ -470,11 +470,8 @@ Cloud Build History (https://console.cloud.google.com/cloud-build/builds?referre
 > *was because ...*
 >
 > Answer:
-We trained our model in the cloud using Vertex AI because it seamlessly integrates with our cloud bucket and has built-in support for managed ML workflows. Vertex AI leverages our Docker setup to manage data preprocessing, training, and model versioning in a unified platform, streamlining our development process with a single command and a few configuration files.
 
-Although Vertex AI allows for easy scalability, we could not access the GPU resources, though our request for GPU quota was approved. Despite this, Vertex AI’s flexibility allowed us to proceed with CPU-based training while ensuring reproducibility and structured model management.
-
-Overall, our choice of Vertex AI was driven by its comprehensive toolset and integration capabilities that facilitated a smooth end-to-end machine-learning workflow.
+We attempted to use Vertex AI for model training due to is obvious pros such as cloud bucket integration, managed ML workflows, and containerized environment support. While we successfully set up a basic CPU-based training pipeline on Vertex AI using our Docker configuration, we encountered limitations in accessing GPU resources despite having approved GPU quotas. Given the computational demands of our model, CPU-based training was not a viable option even though we did implement the pipeline to run a simple training using the CPU. We thus ended up training our model on an available HPC infrastructure instead. While it would have been great to use a tool such as Vertex AI we simply ran into too many issues given our time and monetary constraints. Resource management and resource availability can be quite a pain. We thus used an alternative that we were lucky to have access to.
 
 ## Deployment
 
@@ -493,9 +490,7 @@ Overall, our choice of Vertex AI was driven by its comprehensive toolset and int
 
 We did manage to write an API for our model. We implemented the API by defining endpoints for health checks, testing, and predictions. The /predict endpoint is crucial. It takes a query and list of choices and processes them using the fine-tuned ModernBERT model, returning the predicted probabilities for each answer choice.
 
-Implement some form of logging / feedback endpoint?
-
-We used Pydantic for data validation to ensure incoming requests conform to the expected structure. We also implemented an asynchronous lifespan context manager to load the model and tokenizer when the application starts and clean them when it shuts down. This optimized resource management and ensured that the model was ready for inference as soon as the API was running.
+We additionally used Pydantic for data validation to ensure incoming requests conform to the expected structure. We also implemented an asynchronous lifespan context manager to load the model and tokenizer when the application starts and clean them when it shuts down. This optimized resource management and ensured that the model was ready for inference as soon as the API was running.
 
 ### Question 24
 
@@ -511,16 +506,16 @@ We used Pydantic for data validation to ensure incoming requests conform to the 
 >
 > Answer:
 
-We deployed an API and app to GCP using FastAPI and Streamlit. The app runs on a standard E2 instance with only a CPU. Using CPU only is fine as we are deploying a relatively small model. If working only with the API and hosting it locally, it can be called with the following curl command:
+We deployed an API both locally and to GCP using FastAPI. The app runs on a standard E2 instance with only a CPU. Using CPU only is fine as we are deploying a relatively small model. If working only with the API and hosting it locally, it can be called with the following curl command:
 ```bash
 curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d '{
    "query": "What is the capital of France?",
    "choices": ["Paris", "London", "Berlin", "Madrid"]
 }'
 ```
-The above will return the most likely answer according to our model alongside the probabilities for the provided choices. We also developed a simple streamlit app, which we have deployed on the VM instance mentioned above. You can test it here: 
+We additionally deployed the simple API and Streamlit frontend to Cloud Run. See our response to Q28 for more details on that implementation.
 
-Interface
+[Streamlit Frontend](figures/streamlit.png)
 
 
 ### Question 25
@@ -536,7 +531,7 @@ Interface
 >
 > Answer:
 
-We performed very simple unit testing of the API and did not perform any load testing of the API. We utilized pytest for all other tests and used unittest.mock to create a mock registry for the API. The mock functionality allowed us to simulate the behavior of the model and tokenizer without requiring the actual implementations. We wrote a single test case for the predicted endpoint, which is the critical feature of the API, which checks that the response status code is 200 and contains the expected fields.
+We performed very simple unit testing of the API and did not perform any load testing of the API. We utilized pytest for all other tests and used unittest.mock to create a mock registry for the API. The mock functionality allowed us to simulate the behavior of the model and tokenizer without requiring the actual implementations. We wrote a single test case for the predicted endpoint, which is the critical feature of the API, which checks that the response status code is 200 and contains the expected fields. With the latest test of the api we did however not successfully manage to mock the weights and biases handling, and thus have no tests for the final version that was deployed to Cloud Run.
 
 We could have used a tool like Locust to simulate multiple concurrent users for load testing. This allowed us to assess how the API would perform under stress (probably not very well) and identify any potential bottlenecks. Load testing is an essential component of deploying larger systems and provides insights into how much an API can handle before performance starts to degrade.
 
@@ -574,7 +569,9 @@ To properly monitor the data inputted by our potential users, we would do some f
 >
 > Answer:
 
---- question 27 fill here ---
+We ended up using below 5$ in credits in total for the project as we didn’t manage to run any proper training using GCP which would most certainly have been the most expensive part. The main use-cases in terms of the GCP for our project was using the GCP Bucket for data storage as well as deploying a simple app using Cloud Run. Storage is incredibly cheap and Cloud Run is a very cheap option in terms of cloud solutions when using smaller machines (and when there is no traffic to your application).
+
+If we could have gotten our cloud setup working properly and had gotten access to GPUs such that we could have trained using e.g. Vertex AI that would certainly have driven up our costs for developing the project.
 
 ### Question 28
 
@@ -590,7 +587,14 @@ To properly monitor the data inputted by our potential users, we would do some f
 >
 > Answer:
 
-As discussed in Q24, we implemented a front end for our API. This combined the API and Streamlit functionality and attempted to deploy an actual service using a simple VM instance.
+As discussed in Q24, we implemented a front end for our API and deployed it using Cloud Run. We built two docker images, one for the api and one for the frontend and pushed them to the GCP registry. Those two containers are then used as the foundation for the Cloud Run app. The API and the Frontend can continuously be updated by running (for the api):
+```
+docker build -t gcr.io/$PROJECT_ID/modernbert-api -f dockerfiles/api.dockerfile . 
+docker push gcr.io/$PROJECT_ID/modernbert-api
+gcloud run deploy modernbert-api --image gcr.io/$PROJECT_ID/modernbert-api
+```
+We can do the same for the frontend which will automatically update the Cloud Run instance.
+The backend loads the most recent model from a specified project in Weights & Biases, where trained models are saved in a model registry.
 
 ### Question 29
 
@@ -607,7 +611,18 @@ As discussed in Q24, we implemented a front end for our API. This combined the A
 >
 > Answer:
 
---- question 29 fill here ---
+![Diagram](https://github.com/bertramhojer/mlops-55/blob/main/reports/figures/diagram.png)
+
+The starting point of the diagram is our local setup, where we integrated Docker, DVC, and Wandb into our code. The development environment is managed using DevContainer, which ensures consistency across different setups. The core application includes modules for Model, Train, Hyperparameter optimization, Data, Frontend, API, and Visualize, with dependencies managed via UV and specified in pyproject.toml. Dependencies are versioned with a uv.lock which we push to GitHub. Data is versioned using DVC, which links local datasets to cloud storage, ensuring efficient tracking and reproducibility.
+
+Whenever we commit code and push to GitHub, it automatically triggers GitHub Actions, which handle continuous integration and deployment workflows. These actions build the application, run tests, and push artifacts to Google Artifact Registry, ensuring that the latest versions of models and dependencies are readily available for deployment.
+
+From there, the diagram shows how the cloud infrastructure is structured. The Compute Engine and Vertex AI services in Google Cloud Platform (GCP) retrieve artifacts from the registry and perform computational tasks, such as training machine learning models. The trained models and processed data are stored in a Wandb Artifact Registry, which acts as a central repository for deployment-ready assets. Once the models are validated, they are deployed to production via WandB, ensuring scalable and efficient inference.
+
+Wandb is used to track experiments and visualize model performance, helping to optimize training processes. Additionally, a dedicated Debugger is included in the local environment to facilitate real-time analysis and issue resolution.
+
+In summary, our workflow ensures integration between local development and cloud deployment. It leverages GitHub for version control, CI/CD automation through GitHub Actions, and GCP services for scalable compute and storage. This setup allows us to iterate fast, maintain reproducibility, and deploy robust machine learning models efficiently.
+
 
 ### Question 30
 
@@ -621,7 +636,12 @@ As discussed in Q24, we implemented a front end for our API. This combined the A
 >
 > Answer:
 
---- question 30 fill here ---
+We faced a lot of challenges throughout the course in general and the development of our project. As Nicki mentioned in his final lecture data processing is a major hurdle that wasn’t really covered in this course and that isn’t part of the standard MLOps diagram, it is however something we spent a lot of time on. 
+We additionally spent quite a lot of time trying to get training working using GCP. We couldn't access GPUs on Vertex AI despite approved quotas, forcing us to switch to HPC infrastructure. We also struggled with GCP bucket permissions when writing model artifacts, which required careful IAM policy configuration.
+We also attempted to do proper data versioning with DVC, but that ended up presenting us with more challenges than it did us favors. Establishing consistent versioning protocols and remote storage configurations took considerable effort to standardize and in the end we are not certain we got it working properly.
+Ensuring compatibility between the different components developed by contributors was also quite a challenge. We are referring to components such as preprocessing, model training and e.g. the frontend application. While docker helped us standardize development environments (via e.g. the use of a devcontainer) and we used uv to manage our environment and dependencies in general we still ran into a lot of issues.
+We tried to integrate various continuous integration workflows such as the ones described in Q11, but we still ran into a lot of issues. This has highlighted the need to spend a lot of time preparing and designing a project or an application before the actual coding begins. We are painfully aware that using a more test-driven development approach where it is clearly defined what our program must be capable of before starting development would have been incredibly useful.
+
 
 ### Question 31
 
@@ -637,4 +657,13 @@ As discussed in Q24, we implemented a front end for our API. This combined the A
 > *All members contributed to code by...*
 >
 > Answer:
+
+Student s154097 was responsible for developing the model and training scripts using pytorch lightning as well as training the model using Vertex AI and deploying them using the Compute Engine and Artifact Registry. They additionally developed the devcontainer and development setup.
+
+Student s250393 was in charge of setting up the github repository and the cookie cutter project. They additionally developed that data processing and configured the dvc and GCP Bucket configuration as well as developed and deployed the API and frontend. 
+
+Student s251116 developed aspects of the training script and all evaluation/visualization and logging (including WANDB logging and model sweeps). They also implemented coverage calculations, continuous workflow, and data drifting functionality. 
+
+All code was developed in a collaborative manner, including bug bashing and additional list items not mentioned, such that every group member has an idea of how every component of the entire pipeline works. The above contribution statement is thus just an indicator of who was the primus motor for the specified parts of the project.
+
 
