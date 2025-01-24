@@ -56,11 +56,9 @@ The directory structure of the project looks like this:
 │   └── raw
 ├── dockerfiles/              # Dockerfiles
 │   ├── api.Dockerfile
+│   ├── frontend.Dockerfile
+│   ├── preprocess.Dockerfile
 │   └── train.Dockerfile
-├── docs/                     # Documentation
-│   ├── mkdocs.yml
-│   └── source/
-│       └── index.md
 ├── models/                   # Trained models
 ├── src/                      # Source code
 │   └── project
@@ -70,6 +68,7 @@ The directory structure of the project looks like this:
 │       ├── collate.py
 │       ├── configs.py
 │       ├── data.py
+│       ├── data_drift.py
 │       ├── evaluate.py
 │       ├── frontend.py
 │       ├── model.py
@@ -81,19 +80,24 @@ The directory structure of the project looks like this:
 │       └── visualize.py
 └── tests/                    # Tests
 │   ├── __init__.py
-│   ├── test_api.py
 │   ├── test_data.py
-│   └── test_model.py
+│   ├── test_model.py
+│   └── test_train.py
 ├── .gitignore
 ├── .pre-commit-config.yaml
 ├── LICENSE
 ├── pyproject.toml            # Python project file
+├── ruff.toml            # Ruff settings for linting
+├── uv.lock            # Checkpoint of python dependencies
 ├── README.md                 # Project README
 ```
 </details>
 
 <details>
 <summary>📚 Report</summary>
+
+**👉 [Click to see our report and get more insight on the project!](https://github.com/bertramhojer/mlops-55/tree/main/reports)**
+
 
 </details>
 
