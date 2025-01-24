@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
       - main
       - dev
@@ -39,7 +40,9 @@ jobs:
           uv run coverage report -m --format="markdown" >> cov.md
 
       - name: Find Comment
+        if: github.event.pull_request
         uses: peter-evans/find-comment@v3
+        continue-on-error: true
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -49,9 +52,8 @@ jobs:
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
+          comment-id: ${{ steps.fc.outputs.comment-id || '' }}
           issue-number: ${{ github.event.pull_request.number }}
           body-path: 'cov.md'
           token: ${{ secrets.GITHUB_TOKEN }}
           edit-mode: replace
-
