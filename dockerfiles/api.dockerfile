@@ -20,7 +20,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies using uv
-RUN uv sync --group api && \
+RUN uv sync --group deployment && \
     echo 'PATH=/app/.venv/bin:$PATH' >> ~/.bashrc
 
 # Set PATH for the current build stage
@@ -36,7 +36,7 @@ ENV PYTHONUNBUFFERED=1
 RUN mkdir -p /root/.cache/wandb
 
 # Set default port (can be overridden)
-ENV PORT=8000
+ENV PORT=8080
 
 # Expose the port
 EXPOSE ${PORT}

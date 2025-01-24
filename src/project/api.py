@@ -1,11 +1,14 @@
 import logging
 import os
 import sys
+import time
 from contextlib import asynccontextmanager
 
 import fastapi
 import torch
 import uvicorn
+from fastapi import HTTPException
+from prometheus_client import Counter, Gauge, Histogram, make_asgi_app
 from pydantic import BaseModel
 from transformers import AutoTokenizer
 
@@ -46,11 +49,33 @@ class PredictionRequest(BaseModel):
 registry = Registry()
 
 
+# Define Prometheus metrics
+METRICS = {
+    "prediction_requests": Counter("modernbert_prediction_requests_total", "Total number of prediction requests"),
+    "prediction_errors": Counter("modernbert_prediction_errors_total", "Number of prediction errors"),
+    "prediction_latency": Histogram(
+        "modernbert_prediction_latency_seconds",
+        "Time spent processing prediction requests",
+        buckets=[0.1, 0.5, 1.0, 2.0, 5.0],  # Define appropriate latency buckets
+    ),
+    "model_loaded": Gauge("modernbert_model_loaded", "Indicates if the model is successfully loaded"),
+}
+
+# define prometheus metrics
+prediction_error_counter = Counter("prediction_error", "Number of prediction errors")
+prediction_request_counter = Counter("prediction_requests_total", "Total number of prediction requests")
+prediction_latency = Histogram("prediction_latency_seconds", "Time spent processing prediction requests")
+
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
+
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
     """Lifespan for the FastAPI app."""
     try:
         logger.info("Starting up application...")
+        METRICS["model_loaded"].set(0)  # Initialize as not loaded
 
         # Get environment variables
         wandb_api_key = os.getenv("WANDB_API_KEY")
@@ -96,15 +121,20 @@ async def lifespan(app: fastapi.FastAPI):
         logger.info("Loading tokenizer...")
         registry.tokenizer = AutoTokenizer.from_pretrained("answerdotai/ModernBERT-base")
         registry.model.eval()
+
+        # Indicate model is loaded
+        METRICS["model_loaded"].set(1)
         logger.info("Startup complete - Model loaded successfully")
 
         yield
 
         logger.info("Shutting down...")
+        METRICS["model_loaded"].set(0)
         del registry.model
         del registry.tokenizer
 
     except Exception as e:
+        METRICS["model_loaded"].set(0)
         logger.error(f"Error during startup: {str(e)}", exc_info=True)
         raise
 
@@ -129,33 +159,38 @@ def test(request: TestRequest):
     return {"query": request.query, "response": "I'm not qualified to answer that (ANY) question."}
 
 
-# Modify your predict endpoint to work with the new model
 @app.post("/predict")
 def predict(request: PredictionRequest):
     """Predict endpoint."""
-    model = registry.get()
+    try:
+        # Increment request counter
+        METRICS["prediction_requests"].inc()
 
-    # Create input pairs for each option
-    input_texts = [f"Question: {request.query} Answer: {choice}" for choice in request.choices]
+        # Track latency
+        start_time = time.time()
 
-    # Tokenize inputs
-    encoded = registry.tokenizer(input_texts, padding=True, truncation=True, max_length=128, return_tensors="pt")
+        model = registry.get()
+        input_texts = [f"Question: {request.query} Answer: {choice}" for choice in request.choices]
+        encoded = registry.tokenizer(input_texts, padding=True, truncation=True, max_length=128, return_tensors="pt")
+        encoded["labels"] = torch.zeros(len(request.choices), dtype=torch.long)
 
-    # Add dummy labels (required by model)
-    encoded["labels"] = torch.zeros(len(request.choices), dtype=torch.long)
+        with torch.inference_mode():
+            outputs = model(**encoded)
+            probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
+            correct_probs = probabilities[:, 1].tolist()
 
-    # Run inference
-    with torch.inference_mode():
-        outputs = model(**encoded)
-        probabilities = torch.nn.functional.softmax(outputs.logits, dim=1)
+        # Record latency
+        METRICS["prediction_latency"].observe(time.time() - start_time)
 
-        # Get probability of being correct (second column)
-        correct_probs = probabilities[:, 1].tolist()
+        return {
+            "predictions": correct_probs,
+            "choices": request.choices,
+        }
 
-    return {
-        "predictions": correct_probs,
-        "choices": request.choices,
-    }
+    except Exception as e:
+        METRICS["prediction_errors"].inc()
+        logger.error(f"Prediction error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 if __name__ == "__main__":

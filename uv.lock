@@ -487,9 +487,9 @@ name = "cmd2"
 version = "2.5.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "gnureadline", marker = "platform_system == 'Darwin' and sys_platform != 'linux'" },
+    { name = "gnureadline", marker = "sys_platform == 'darwin'" },
     { name = "pyperclip" },
-    { name = "pyreadline3", marker = "platform_system == 'Windows' and sys_platform != 'linux'" },
+    { name = "pyreadline3", marker = "sys_platform == 'win32'" },
     { name = "wcwidth" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/ab/53b10acb2534c8cd450e9403b79f95245b5838f9c4fa916e873e7d9d9b8a/cmd2-2.5.9.tar.gz", hash = "sha256:09bb13637832bc818aad5577ccdf5dbeb0c9fbe5b9412ff78d5084f7846f83ab", size = 883164 }
@@ -2177,6 +2177,7 @@ deployment = [
     { name = "httpx" },
     { name = "lightning" },
     { name = "pandas" },
+    { name = "prometheus-client" },
     { name = "requests" },
     { name = "streamlit" },
     { name = "torch" },
@@ -2243,6 +2244,7 @@ deployment = [
     { name = "httpx", specifier = ">=0.25.0" },
     { name = "lightning", specifier = ">=2.1.3" },
     { name = "pandas", specifier = ">=2.1.3" },
+    { name = "prometheus-client", specifier = ">=0.17.1" },
     { name = "requests", specifier = ">=2.26.0" },
     { name = "streamlit", specifier = ">=1.28.2" },
     { name = "torch", specifier = ">=2.3.1" },
@@ -2907,6 +2909,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3b/8a/de4dc1a6098621781c266b3fb3964009af1e9023527180cb8a3b0dd9d09e/prettytable-3.12.0.tar.gz", hash = "sha256:f04b3e1ba35747ac86e96ec33e3bb9748ce08e254dc2a1c6253945901beec804", size = 59539 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/73/19/4bb9530512432774fdd7cb7c020851d4decbb811d95f86fd4f6a870a6d3e/prettytable-3.12.0-py3-none-any.whl", hash = "sha256:77ca0ad1c435b6e363d7e8623d7cc4fcf2cf15513bf77a1c1b2e814930ac57cc", size = 31105 },
+]
+
+[[package]]
+name = "prometheus-client"
+version = "0.21.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/14/7d0f567991f3a9af8d1cd4f619040c93b68f09a02b6d0b6ab1b2d1ded5fe/prometheus_client-0.21.1.tar.gz", hash = "sha256:252505a722ac04b0456be05c05f75f45d760c2911ffc45f2a06bcaed9f3ae3fb", size = 78551 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ff/c2/ab7d37426c179ceb9aeb109a85cda8948bb269b7561a0be870cc656eefe4/prometheus_client-0.21.1-py3-none-any.whl", hash = "sha256:594b45c410d6f4f8888940fe80b5cc2521b305a1fafe1c58609ef715a001f301", size = 54682 },
 ]
 
 [[package]]
