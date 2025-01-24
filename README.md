@@ -126,7 +126,7 @@ See `src/project/train.py` for the default configuration. You can override any o
 
 
 ```shell
-uv run train train/model_name=t5-base train/train_batch_size=4 train/strategy=DDP datamodule/filename=mmlu 
+uv run train train=distributed_train train.model_name=t5-base train.batch_size=4 train.strategy=DDP datamodule.file_name=mmlu 
 ```
 You can also define a yaml configuration named "expA.yaml" in the folder `configs/experiments`, and use it to override the default variables:
 ```shell
