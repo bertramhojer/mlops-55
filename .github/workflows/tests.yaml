@@ -7,51 +7,54 @@ on:
   pull_request:
     branches:
       - main
-      - dev
 
 jobs:
   test:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      matrix:
-        operating-system: ["ubuntu-latest", "windows-latest", "macos-latest"]
-        python-version: ["3.12"]
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          version: "0.5.13"
-          python-version: ${{ matrix.python-version }}
-          enable-cache: true
+          python-version: '3.12'
 
-      - name: Install the project
-        run: uv sync --extra train --extra deployment
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -r requirements.txt
 
       - name: Run tests
-        run: uv run coverage run --source=src/ -m pytest
+        run: |
+          . .venv/bin/activate
+          uv run coverage run --source=src/ -m pytest
 
-      - name: Generate coverage report
+      - name: Upload coverage report
         run: |
           echo '## Code Coverage Report' >> cov.md
           uv run coverage report -m --format="markdown" >> cov.md
 
-      - name: Find Comment
+      - name: Create a coverage comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const coverageReport = fs.readFileSync('cov.md', 'utf8');
+            github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: coverageReport,
+            });
+
+      - name: Find coverage comment
         uses: peter-evans/find-comment@v3
-        id: fc
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: 'Coverage'
-
-      - name: Create comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body-path: 'cov.md'
+          comment-author: github-actions[bot]
+          body-includes: Coverage
           token: ${{ secrets.GITHUB_TOKEN }}
-          edit-mode: replace
-
+          repository: bertramhojer/mlops-55
+          direction: first
