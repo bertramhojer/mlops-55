@@ -35,7 +35,7 @@ jobs:
           echo '## Code Coverage Report' >> cov.md
           uv run coverage report -m --format="markdown" >> cov.md
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: cov.md
