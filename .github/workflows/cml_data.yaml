@@ -45,7 +45,7 @@ jobs:
         echo '![](./labels_count.png "Labels Distribution")' >> data_statistics.md
 
     - name: Setup cml
-      uses: iterative/setup-cml@v2
+      uses: iterative/setup-cml@v3
 
     - name: Comment on PR
       env:
